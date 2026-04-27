@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="地域のスポット情報をカードで集める・探す・行く。コレクションカード・ポータルサイト。" />
+    <title>machica | 地域を旅するコレクション</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Playfair+Display:wght@400;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+    <!-- ヘッダー -->
+    <header class="site-header">
+        <div class="header-inner">
+            <a href="index.html" class="logo">
+                <span class="logo-icon">🗾</span>
+                <span class="logo-text">machica</span>
+            </a>
+            <nav class="header-nav">
+                <a href="index.html" class="nav-link active">カード一覧</a>
+                <a href="map.html" class="nav-link">地図で見る</a>
+                <a href="admin/index.html" class="nav-link admin-link">管理画面</a>
+                <div class="lang-switch" style="display:flex;gap:4px;margin-left:8px;">
+                    <button class="lang-btn active" data-lang="ja"
+                        style="padding:4px 8px;font-size:0.8rem;font-weight:700;border:1px solid #ccc;border-radius:4px;background:#fff;color:#333;">JP</button>
+                    <button class="lang-btn" data-lang="en"
+                        style="padding:4px 8px;font-size:0.8rem;font-weight:700;border:1px solid #ccc;border-radius:4px;background:#f0f0f0;color:#999;">EN</button>
+                </div>
+            </nav>
+            <button class="hamburger" id="hamburgerBtn" aria-label="メニューを開く">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+        <div class="mobile-nav" id="mobileNav">
+            <a href="index.html" class="nav-link active">カード一覧</a>
+            <a href="map.html" class="nav-link">地図で見る</a>
+            <a href="admin/index.html" class="nav-link">管理画面</a>
+        </div>
+    </header>
+
+    <!-- ヒーローセクション -->
+    <section class="hero">
+        <div class="hero-content">
+            <p class="hero-eyebrow">Collect Local Treasures</p>
+            <h1 class="hero-title">地域のスポットを<br>カードで集めよう</h1>
+            <p class="hero-sub">飲食店、カフェ、観光地、体験スポット…<br>あなただけのコレクションを作ろう。</p>
+        </div>
+        <div class="hero-stats">
+            <div class="stat-item">
+                <span class="stat-num" id="totalCards">0</span>
+                <span class="stat-label">スポット</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-num">6</span>
+                <span class="stat-label">ジャンル</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-num">47</span>
+                <span class="stat-label">都道府県</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- 検索・フィルターセクション -->
+    <section class="filter-section">
+        <div class="filter-inner">
+            <!-- キーワード検索 -->
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" class="search-input" placeholder="スポット名・キーワードで検索…" />
+                <button class="search-clear" id="searchClear" aria-label="クリア">✕</button>
+            </div>
+            <!-- ジャンルフィルター -->
+            <div class="genre-filters" id="genreFilters">
+                <button class="genre-btn active" data-genre="all">すべて</button>
+                <!-- JSで動的生成 -->
+            </div>
+            <!-- エリアフィルター -->
+            <div class="area-filter-wrap">
+                <select class="area-select" id="areaSelect">
+                    <option value="all">エリア（全国）</option>
+                </select>
+            </div>
+        </div>
+        <div class="result-count">
+            <span id="resultCount">0</span>件のスポットが見つかりました
+        </div>
+    </section>
+
+    <!-- カードグリッド -->
+    <main class="cards-section">
+        <div class="card-grid" id="cardGrid">
+            <!-- JSで動的生成 -->
+        </div>
+        <div class="no-results" id="noResults" style="display:none;">
+            <p>🔍 条件に合うスポットが見つかりませんでした</p>
+            <button class="btn-secondary" onclick="resetFilters()">フィルターをリセット</button>
+        </div>
+    </main>
+
+    <!-- フッター -->
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-logo">
+                <span class="logo-icon">🗾</span>
+                <span class="logo-text">machica</span>
+            </div>
+            <p class="footer-copy">© 2026 machica. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- カード詳細モーダル -->
+    <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-container">
+            <button class="modal-close" id="modalClose" aria-label="閉じる">✕</button>
+
+            <!-- ギャラリーエリア -->
+            <div class="modal-gallery-area">
+                <div class="modal-main-image-wrap">
+                    <img src="" alt="" class="modal-main-image" id="modalImage" />
+                    <!-- 裏面がある場合の切り替えボタン（オーバーレイ） -->
+                    <button id="flipBtn" class="flip-btn" style="display:none;">↻ 裏面を見る</button>
+                    <span class="modal-badge" id="modalBadge"></span>
+                </div>
+                <!-- サムネイルリスト -->
+                <div class="modal-thumbs" id="modalThumbs"></div>
+            </div>
+
+            <div class="modal-body">
+                <div class="modal-meta">
+                    <span class="modal-area" id="modalArea"></span>
+                    <span class="modal-category" id="modalCategory"></span>
+                </div>
+                <h2 class="modal-title" id="modalTitle"></h2>
+                <p class="modal-description" id="modalDescription"></p>
+                <div class="modal-address">
+                    <span class="address-icon">📍</span>
+                    <span id="modalAddress"></span>
+                </div>
+                <!-- Google Mapsプレビュー -->
+                <div class="map-container" id="mapContainer">
+                    <div class="map-placeholder" id="mapPlaceholder">
+                        <span>🗺️</span>
+                        <p>地図を読み込み中…</p>
+                    </div>
+                    <div id="googleMap" style="width:100%;height:100%;"></div>
+                </div>
+                <div class="modal-actions">
+                    <a href="#" class="btn-primary" id="routeBtn" target="_blank" rel="noopener">
+                        <span>🚗</span> Google Mapsでルート検索
+                    </a>
+                    <button class="btn-secondary" id="shareBtn">
+                        <span>📤</span> シェアする
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin/db.js"></script>
+    <script src="admin/image-utils.js"></script>
+    <script src="admin/migration.js"></script>
+    <script src="data/categories.js"></script>
+    <script src="data/areas.js"></script>
+    <script src="data/cards.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

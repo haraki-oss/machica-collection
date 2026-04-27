@@ -1,0 +1,111 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>管理ダッシュボード | machica Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Playfair+Display:wght@400;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="admin.css" />
+</head>
+
+<body>
+
+    <!-- サイドバー -->
+    <aside class="admin-sidebar">
+        <div class="sidebar-logo">
+            <span>🗾</span>
+            <span>machica</span>
+            <span style="font-size:0.7rem;font-weight:500;color:#94A3B8;margin-left:auto;">Admin</span>
+        </div>
+        <nav class="sidebar-nav">
+            <p class="sidebar-section-label">メニュー</p>
+            <a href="index.html" class="sidebar-link active">📊 ダッシュボード</a>
+            <a href="cards.html" class="sidebar-link">🃏 カード管理</a>
+            <a href="cards-new.html" class="sidebar-link">➕ カード登録</a>
+            <a href="cards-scan.html" class="sidebar-link">📷 スキャン登録</a><a href="categories.html" class="sidebar-link">🏷️ カテゴリー管理</a>
+            <a href="areas.html" class="sidebar-link">🌐 エリア管理</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="../index.html">🌐 公開サイトを見る</a>
+        </div>
+    </aside>
+
+    <!-- コンテンツ -->
+    <div class="admin-content">
+        <header class="admin-topbar">
+            <span class="topbar-title">ダッシュボード</span>
+            <div class="topbar-actions">
+                <a href="cards-new.html" class="btn-primary">＋ カードを登録</a>
+            </div>
+        </header>
+
+        <main class="admin-main">
+            <div class="page-header">
+                <div class="page-header-text">
+                    <h1>ダッシュボード</h1>
+                    <p>スポットカードの登録状況をひと目で確認できます</p>
+                </div>
+            </div>
+
+            <!-- 統計 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-card-icon">🃏</div>
+                    <span class="stat-card-label">総スポット数</span>
+                    <span class="stat-card-value" id="statTotal">0</span>
+                    <span class="stat-card-sub">登録済みカード</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-icon">🏷️</div>
+                    <span class="stat-card-label">ジャンル数</span>
+                    <span class="stat-card-value">6</span>
+                    <span class="stat-card-sub">飲食店・カフェ・地域食・観光・総合・体験</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-icon">🗺️</div>
+                    <span class="stat-card-label">対応エリア</span>
+                    <span class="stat-card-value" id="statAreas">0</span>
+                    <span class="stat-card-sub">都道府県</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-icon">📷</div>
+                    <span class="stat-card-label">写真あり</span>
+                    <span class="stat-card-value" id="statWithImg">0</span>
+                    <span class="stat-card-sub">写真付き</span>
+                </div>
+            </div>
+
+            <!-- ジャンル別統計 -->
+            <div class="table-section" style="margin-bottom:28px;">
+                <div class="table-header">
+                    <span class="table-title">ジャンル別 登録数</span>
+                </div>
+                <div style="padding:20px 24px;" id="genreStats">
+                    <!-- JSで生成 -->
+                </div>
+            </div>
+
+            <!-- 最近追加されたカード -->
+            <div class="table-section">
+                <div class="table-header">
+                    <span class="table-title">最近追加されたスポット</span>
+                    <a href="cards.html" class="btn-secondary">すべて見る</a>
+                </div>
+                <div style="padding:20px 24px;">
+                    <div class="recent-grid" id="recentCards"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../data/categories.js"></script>
+    <script src="../data/cards.js"></script>
+    <script src="admin-dashboard.js"></script>
+</body>
+
+</html>

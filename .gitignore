@@ -1,0 +1,27 @@
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+*.sublime-project
+*.sublime-workspace
+.vscode/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local env / secrets
+.env
+.env.local
+
+# Temporary files
+*.tmp
+*.temp
+
+# Admin debug file (not needed in production)
+admin/admin_debug.txt
+
+# docs フォルダ（開発用ドキュメントはGit管理から除外）
+docs/

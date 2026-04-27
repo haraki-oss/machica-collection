@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>地図で見る | machica</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+        .site-header { position: absolute; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); }
+        
+        #map {
+            width: 100%;
+            height: 100vh;
+            padding-top: 60px; /* Header height offset */
+            box-sizing: border-box;
+            background: #E2E8F0;
+        }
+
+        /* Leaflet Popup Customization */
+        .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; }
+        .leaflet-popup-content { margin: 0; width: 220px !important; }
+        .popup-card { display: flex; flex-direction: column; text-decoration: none; color: inherit; }
+        .popup-img { width: 100%; height: 120px; object-fit: cover; background: #F1F5F9; }
+        .popup-info { padding: 12px; }
+        .popup-title { margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 700; color: #1E293B; }
+        .popup-area { margin: 0 0 8px 0; font-size: 0.75rem; color: #64748B; }
+        .popup-btn { display: block; width: 100%; padding: 6px 0; text-align: center; background: var(--primary); color: white; border-radius: 6px; font-size: 0.8rem; font-weight: 600; text-decoration: none; }
+        .popup-btn:hover { background: #0E7490; }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="site-header">
+        <div class="header-inner">
+            <a href="index.html" class="logo">
+                <span class="logo-icon">🗾</span>
+                <span class="logo-text">machica</span>
+            </a>
+            <nav class="header-nav">
+                <a href="index.html" class="nav-link">カード一覧</a>
+                <a href="map.html" class="nav-link active">地図で見る</a>
+                <a href="admin/index.html" class="nav-link admin-link">管理画面</a>
+            </nav>
+            <button class="hamburger" id="hamburgerBtn" aria-label="メニューを開く">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+        <div class="mobile-nav" id="mobileNav">
+            <a href="index.html" class="nav-link">カード一覧</a>
+            <a href="map.html" class="nav-link active">地図で見る</a>
+            <a href="admin/index.html" class="nav-link">管理画面</a>
+        </div>
+    </header>
+
+    <!-- マップコンテナ -->
+    <div id="map"></div>
+
+    <!-- Scripts -->
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <script src="admin/db.js"></script>
+    <script src="admin/migration.js"></script>
+    <script src="data/categories.js"></script>
+    <script src="data/areas.js"></script>
+    <script src="data/cards.js"></script>
+    <script src="map-app.js"></script>
+</body>
+</html>
