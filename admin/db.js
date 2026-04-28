@@ -1,4 +1,4 @@
-/**
+﻿/**
  * machica Admin - Supabase Wrapper
  * Replaces IndexedDB with Supabase Database
  */
@@ -7,11 +7,10 @@ const STORES = ['cards', 'areas', 'categories', 'settings'];
 
 const machicaDB = {
     /**
-     * データの一覧取得
-     */
+     * 繝・・繧ｿ縺ｮ荳隕ｧ蜿門ｾ・     */
     async getAll(storeName) {
         if (!STORES.includes(storeName)) throw new Error('Invalid store: ' + storeName);
-        const { data, error } = await supabase.from(storeName).select('*');
+        const { data, error } = await supabaseClient.from(storeName).select('*');
         if (error) {
             console.error('Supabase getAll Error:', error);
             return [];
@@ -20,11 +19,10 @@ const machicaDB = {
     },
 
     /**
-     * 単一データの取得
-     */
+     * 蜊倅ｸ繝・・繧ｿ縺ｮ蜿門ｾ・     */
     async get(storeName, id) {
         if (!STORES.includes(storeName)) throw new Error('Invalid store: ' + storeName);
-        const { data, error } = await supabase.from(storeName).select('*').eq('id', id).single();
+        const { data, error } = await supabaseClient.from(storeName).select('*').eq('id', id).single();
         if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
             console.error('Supabase get Error:', error);
         }
@@ -45,7 +43,7 @@ const machicaDB = {
             const fileObj = new File([blob], filename, { type: blob.type });
             
             // Upload to Supabase
-            const { data, error } = await supabase.storage.from('images').upload(filename, fileObj, {
+            const { data, error } = await supabaseClient.storage.from('images').upload(filename, fileObj, {
                 cacheControl: '3600',
                 upsert: false
             });
@@ -56,12 +54,12 @@ const machicaDB = {
             }
             
             // Get public URL
-            const { data: publicData } = supabase.storage.from('images').getPublicUrl(filename);
+            const { data: publicData } = supabaseClient.storage.from('images').getPublicUrl(filename);
             return publicData.publicUrl;
         } catch (e) {
             console.error('Image upload failed:', e);
-            alert('画像のアップロードに失敗しました: ' + (e.message || JSON.stringify(e)));
-            throw e; // エラーを投げて全体の保存を中止する
+            alert('逕ｻ蜒上・繧｢繝・・繝ｭ繝ｼ繝峨↓螟ｱ謨励＠縺ｾ縺励◆: ' + (e.message || JSON.stringify(e)));
+            throw e; // 繧ｨ繝ｩ繝ｼ繧呈兜縺偵※蜈ｨ菴薙・菫晏ｭ倥ｒ荳ｭ豁｢縺吶ｋ
         }
     },
 
@@ -76,8 +74,7 @@ const machicaDB = {
     },
 
     /**
-     * データの追加・更新（単一または配列）
-     */
+     * 繝・・繧ｿ縺ｮ霑ｽ蜉繝ｻ譖ｴ譁ｰ・亥腰荳縺ｾ縺溘・驟榊・・・     */
     async put(storeName, data) {
         if (!STORES.includes(storeName)) throw new Error('Invalid store: ' + storeName);
         
@@ -91,7 +88,7 @@ const machicaDB = {
             }
         }
         
-        const { error } = await supabase.from(storeName).upsert(records);
+        const { error } = await supabaseClient.from(storeName).upsert(records);
         if (error) {
             console.error('Supabase put Error:', error);
             throw error;
@@ -99,14 +96,15 @@ const machicaDB = {
     },
 
     /**
-     * データの削除
+     * 繝・・繧ｿ縺ｮ蜑企勁
      */
     async delete(storeName, id) {
         if (!STORES.includes(storeName)) throw new Error('Invalid store: ' + storeName);
-        const { error } = await supabase.from(storeName).delete().eq('id', id);
+        const { error } = await supabaseClient.from(storeName).delete().eq('id', id);
         if (error) {
             console.error('Supabase delete Error:', error);
             throw error;
         }
     }
 };
+
