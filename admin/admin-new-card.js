@@ -351,6 +351,10 @@ function parseGMapInput(raw) {
     const coordMatch = s.match(/^(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)$/);
     if (coordMatch) return { lat: parseFloat(coordMatch[1]), lng: parseFloat(coordMatch[2]) };
 
+    // ⑤ !3d と !4d (場所の詳細URL)
+    const dMatch = s.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+    if (dMatch) return { lat: parseFloat(dMatch[1]), lng: parseFloat(dMatch[2]) };
+
     return null;
 }
 
@@ -359,17 +363,57 @@ function bindGMapPaste() {
     const resultEl = document.getElementById('gMapParseResult');
     if (!input) return;
 
-    const tryParse = () => {
-        const result = parseGMapInput(input.value);
+    const tryParse = async () => {
+        const url = input.value.trim();
+        if (!url) {
+            if (resultEl) resultEl.style.display = 'none';
+            input.style.borderColor = 'var(--border)';
+            return;
+        }
+
+        let result = parseGMapInput(url);
+
+        // 短縮URLの場合、CORSプロキシ経由で展開を試みる
+        if (!result && /goo\.gl|maps\.app|bit\.ly/i.test(url)) {
+            if (resultEl) {
+                resultEl.style.display = 'block';
+                resultEl.style.background = '#EFF6FF';
+                resultEl.style.borderColor = '#BFDBFE';
+                resultEl.style.color = '#1E3A8A';
+                resultEl.textContent = '🔄 URLを展開して座標を取得中…';
+            }
+            try {
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
+                const data = await res.json();
+                
+                const finalUrl = data?.status?.url || '';
+                if (finalUrl) {
+                    result = parseGMapInput(finalUrl);
+                }
+                
+                if (!result) {
+                    const contents = data?.contents || '';
+                    const match = contents.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || contents.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+                    if (match) result = { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+                }
+            } catch (e) {
+                console.error('URL resolution failed:', e);
+            }
+        }
+
         if (result) {
             document.getElementById('cardLat').value = result.lat;
             document.getElementById('cardLng').value = result.lng;
             if (resultEl) {
                 resultEl.style.display = 'block';
+                resultEl.style.background = '#F0FFF4';
+                resultEl.style.borderColor = '#BBF7D0';
+                resultEl.style.color = '#166534';
                 resultEl.textContent = `✓ 座標を取得しました：緯度 ${result.lat}、経度 ${result.lng}`;
             }
             input.style.borderColor = '#34D399';
-        } else if (input.value.trim()) {
+        } else {
             if (resultEl) {
                 resultEl.style.display = 'block';
                 resultEl.style.background = '#FEF2F2';
