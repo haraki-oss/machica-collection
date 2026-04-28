@@ -122,10 +122,27 @@ async function detectAndProcessQR(imageFile) {
 }
 
 function detectQR(imageFile) {
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
         const img = new Image();
         const objectUrl = URL.createObjectURL(imageFile);
-        img.onload = () => {
+        
+        img.onload = async () => {
+            // 1. BarcodeDetector API (Native, high accuracy)
+            if ('BarcodeDetector' in window) {
+                try {
+                    const barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+                    const barcodes = await barcodeDetector.detect(img);
+                    if (barcodes.length > 0) {
+                        URL.revokeObjectURL(objectUrl);
+                        resolve(barcodes[0].rawValue);
+                        return;
+                    }
+                } catch (e) {
+                    console.warn('BarcodeDetector failed or no barcode found', e);
+                }
+            }
+
+            // 2. Fallback to jsQR
             // Try multiple scales for better QR detection
             const scales = [1.0, 2.0, 0.5];
             for (const scale of scales) {
@@ -193,6 +210,49 @@ async function reverseGeocode(lat, lng) {
 }
 
 // ── OCR (Tesseract.js - lazy loaded) ──────────────────
+async function preprocessImageForOCR(base64) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            // シンプルな二値化（グレースケール化＋閾値処理）
+            // 閾値は少し高めにして、背景の桜や薄い点線を白に飛ばす
+            const threshold = 160; 
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                // 輝度（Luminance）の計算
+                const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+                
+                if (luminance > threshold) {
+                    data[i] = 255;     // R
+                    data[i + 1] = 255; // G
+                    data[i + 2] = 255; // B
+                } else {
+                    data[i] = 0;       // R
+                    data[i + 1] = 0;   // G
+                    data[i + 2] = 0;   // B
+                }
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+            resolve(canvas.toDataURL('image/jpeg', 0.9));
+        };
+        img.onerror = reject;
+        img.src = base64;
+    });
+}
+
 async function runOCR() {
     // OCR対象は裏面（日本語カード）
     const targetImage = backImageBase64;
@@ -209,13 +269,16 @@ async function runOCR() {
         if (!window.Tesseract) {
             await loadScript('https://unpkg.com/tesseract.js@v4.1.1/dist/tesseract.min.js');
         }
+        
         btn.textContent = '⟳ OCR実行中…';
-        setOcrStatus('scanning', 'Japanese OCR 実行中…（20〜60秒）');
+        setOcrStatus('scanning', '画像の前処理（二値化）を実行中…');
+        const processedImage = await preprocessImageForOCR(targetImage);
 
+        setOcrStatus('scanning', 'Japanese OCR 実行中…（20〜60秒）');
         const worker = await Tesseract.createWorker('jpn', 1, {
             logger: m => { if (m.status === 'recognizing text') btn.textContent = `⟳ OCR ${Math.round(m.progress * 100)}%…`; }
         });
-        const { data: { text } } = await worker.recognize(targetImage);
+        const { data: { text } } = await worker.recognize(processedImage);
         await worker.terminate();
 
         processOCRText(text);
@@ -230,24 +293,48 @@ async function runOCR() {
 }
 
 function processOCRText(rawText) {
-    const lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    // 改行で分割し、前後の空白を削除
+    let lines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-    // Find spot name: short Japanese-containing line, not a number/symbol
+    // 1. 不要な行を除去
+    lines = lines.filter(l => {
+        // 記号や数字だけの行を除外（点線、バーコードの誤認識など）
+        if (/^[0-9\s!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?・〜〜ー]+$/.test(l)) return false;
+        // 完全に英語の行を除外
+        if (/^[a-zA-Z\s]+$/.test(l)) return false;
+        // 特定キーワードを含む行を除外
+        const ignoreWords = ['AMANEK', 'walk away', 'min', 'machica'];
+        if (ignoreWords.some(w => l.toLowerCase().includes(w.toLowerCase()))) return false;
+        return true;
+    });
+
+    // 2. タイトルの抽出
     const titleEl = document.getElementById('cardTitle');
     if (!titleEl.value) {
-        const titleLine = lines.find(l => l.length >= 2 && l.length <= 20 && /[\u3000-\u9fff]/.test(l));
-        if (titleLine) titleEl.value = titleLine;
+        // 日本語が含まれ、短めの行をタイトル候補とする
+        const titleLine = lines.find(l => l.length >= 2 && l.length <= 25 && /[\u3000-\u9fff]/.test(l));
+        if (titleLine) {
+            // 先頭にある数字やスペース（例: "26 "）を除去
+            titleEl.value = titleLine.replace(/^[0-9\s.、]+/, '').trim();
+        }
     }
 
-    // Find description: long Japanese lines
+    // 3. 説明文の抽出
     const descEl = document.getElementById('cardDesc');
     if (!descEl.value) {
-        const descLines = lines.filter(l => l.length > 8 && /[\u3000-\u9fff]/.test(l));
-        if (descLines.length > 0) descEl.value = descLines.join('');
+        // タイトルとして選ばれた行以降の、ある程度長い日本語行を説明文とする
+        const titleIndex = lines.findIndex(l => titleEl.value && l.includes(titleEl.value.substring(0, 3)));
+        const startIndex = titleIndex >= 0 ? titleIndex + 1 : 0;
+        
+        const descLines = lines.slice(startIndex).filter(l => l.length > 5 && /[\u3000-\u9fff]/.test(l));
+        if (descLines.length > 0) {
+            descEl.value = descLines.join('\n'); // 繋げて1つのテキストに
+        }
     }
 
     // Show debug
     console.log('[OCR Raw]', rawText);
+    console.log('[OCR Processed]', lines);
 }
 
 function setOcrStatus(state, msg) {
