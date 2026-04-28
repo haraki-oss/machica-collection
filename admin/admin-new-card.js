@@ -271,32 +271,90 @@ function bindFormEvents() {
     });
 }
 
+async function fetchCoordinates(name, address) {
+    // 1. GSI API (国土地理院) は日本の住所に非常に強い
+    if (address) {
+        try {
+            // 建物名などを省いたクリーンな住所で検索
+            const cleanAddress = address.replace(/[ 　].*$/, '').replace(/ビル.*$/, '');
+            const res = await fetch(`https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(cleanAddress)}`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+                return { lat: data[0].geometry.coordinates[1], lng: data[0].geometry.coordinates[0] };
+            }
+        } catch(e) { console.warn('GSI API failed', e); }
+    }
+
+    // 2. Nominatim (OSM) - 名称＋住所
+    const query = [name, address].filter(Boolean).join(' ');
+    if (query) {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+                return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+            }
+        } catch(e) { console.warn('Nominatim failed', e); }
+    }
+
+    // 3. Nominatim (OSM) - 名称のみ
+    if (name) {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name)}`);
+            const data = await res.json();
+            if (data && data.length > 0) {
+                return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+            }
+        } catch(e) { console.warn('Nominatim name failed', e); }
+    }
+
+    return null;
+}
+
 function bindAutoGeoEvent() {
     const btn = document.getElementById('autoGeoBtn');
     if (!btn) return;
 
     btn.addEventListener('click', async () => {
-        const addressInput = document.getElementById('cardAddress');
-        const latInput = document.getElementById('cardLat');
-        const lngInput = document.getElementById('cardLng');
-        const address = addressInput.value.trim();
-        if (!address) return;
+        const address = document.getElementById('cardAddress').value.trim();
+        const name = document.getElementById('cardTitle').value.trim();
+        
+        if (!address && !name) {
+            alert('スポット名または住所を入力してください');
+            return;
+        }
 
         const originalText = btn.textContent;
-        btn.textContent = '検索中...';
+        btn.textContent = '🔍 検索中...';
         btn.disabled = true;
 
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`, {
-                headers: { 'User-Agent': 'machica-card-portal-admin/1.0' }
-            });
-            const data = await res.json();
-            if (data && data.length > 0) {
-                latInput.value = data[0].lat;
-                lngInput.value = data[0].lon;
-                alert('座標を取得しました');
+            const coords = await fetchCoordinates(name, address);
+
+            if (coords) {
+                document.getElementById('cardLat').value = coords.lat;
+                document.getElementById('cardLng').value = coords.lng;
+                
+                // Google Maps URLも自動生成してセット
+                const mapQuery = name ? `${name} ${address}` : address;
+                const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery.trim())}`;
+                
+                const urlInput = document.getElementById('gMapPaste');
+                if (urlInput) {
+                    urlInput.value = mapUrl;
+                    urlInput.style.borderColor = '#34D399';
+                    
+                    const resultEl = document.getElementById('gMapParseResult');
+                    if (resultEl) {
+                        resultEl.style.display = 'block';
+                        resultEl.style.background = '#F0FFF4';
+                        resultEl.style.borderColor = '#BBF7D0';
+                        resultEl.style.color = '#166534';
+                        resultEl.textContent = `✓ 名称と住所から座標とURLを自動取得しました！`;
+                    }
+                }
             } else {
-                alert('見つかりませんでした');
+                alert('座標が見つかりませんでした。名称や住所を少し変更して再度お試しください。');
             }
         } catch (e) {
             console.error(e);
