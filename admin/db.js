@@ -42,21 +42,26 @@ const machicaDB = {
             // Generate unique filename
             const ext = blob.type.split('/')[1] || 'jpeg';
             const filename = `img_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${ext}`;
+            const fileObj = new File([blob], filename, { type: blob.type });
             
             // Upload to Supabase
-            const { data, error } = await supabase.storage.from('images').upload(filename, blob, {
+            const { data, error } = await supabase.storage.from('images').upload(filename, fileObj, {
                 cacheControl: '3600',
                 upsert: false
             });
             
-            if (error) throw error;
+            if (error) {
+                console.error('Storage Upload Error Detail:', error);
+                throw error;
+            }
             
             // Get public URL
             const { data: publicData } = supabase.storage.from('images').getPublicUrl(filename);
             return publicData.publicUrl;
         } catch (e) {
             console.error('Image upload failed:', e);
-            return dataUrl; // fallback to base64 if upload fails
+            alert('画像のアップロードに失敗しました: ' + (e.message || JSON.stringify(e)));
+            throw e; // エラーを投げて全体の保存を中止する
         }
     },
 
