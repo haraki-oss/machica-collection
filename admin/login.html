@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ログイン | machica Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="admin.css" />
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: var(--bg-soft);
+        }
+        .login-card {
+            background: var(--bg-white);
+            padding: 40px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        .login-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .login-subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 32px;
+        }
+        .form-group {
+            text-align: left;
+            margin-bottom: 24px;
+        }
+        #loginError {
+            color: #EF4444;
+            font-size: 0.85rem;
+            margin-top: 8px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="login-logo">
+            <span>🗾</span> machica
+        </div>
+        <div class="login-subtitle">管理画面ログイン</div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label class="form-label" for="password">パスワード</label>
+                <input type="password" id="password" class="form-control" placeholder="パスワードを入力" required />
+                <div id="loginError">パスワードが間違っています。</div>
+            </div>
+            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px;">ログイン</button>
+        </form>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            // パスワードは「admin」に設定しています
+            if (password === 'admin') {
+                sessionStorage.setItem('machica_admin_logged_in', 'true');
+                // 元々アクセスしようとしていたページがあればそこに遷移させることも可能ですが
+                // 今回はシンプルにダッシュボードへ
+                window.location.href = 'index.html';
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
