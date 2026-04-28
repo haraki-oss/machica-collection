@@ -3,6 +3,9 @@
  * 公開サイト（index.html）用
  */
 
+// 公開サイトアクセス時に管理画面のセッションをリセットし、毎回パスワードを求めるようにする
+sessionStorage.removeItem('machica_admin_logged_in');
+
 // ── 状態管理 ─────────────────────────────────────
 let state = {
     cards: [],

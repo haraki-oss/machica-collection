@@ -1,3 +1,6 @@
+// 公開サイトアクセス時に管理画面のセッションをリセットし、毎回パスワードを求めるようにする
+sessionStorage.removeItem('machica_admin_logged_in');
+
 document.addEventListener('DOMContentLoaded', async () => {
     // モバイルメニューのトグル（index.htmlと同様）
     const hamburgerBtn = document.getElementById('hamburgerBtn');
