@@ -1,106 +1,107 @@
 /**
- * machica Admin - IndexedDB Wrapper
+ * machica Admin - Supabase Wrapper
+ * Replaces IndexedDB with Supabase Database
  */
 
-const DB_NAME = 'machica_db';
-const DB_VERSION = 1;
 const STORES = ['cards', 'areas', 'categories', 'settings'];
 
 const machicaDB = {
-    _db: null,
-
-    /**
-     * データベースの初期化
-     */
-    async init() {
-        if (this._db) return this._db;
-
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-            request.onupgradeneeded = (event) => {
-                const db = event.target.result;
-                STORES.forEach(storeName => {
-                    if (!db.objectStoreNames.contains(storeName)) {
-                        db.createObjectStore(storeName, { keyPath: 'id' });
-                    }
-                });
-            };
-
-            request.onsuccess = (event) => {
-                this._db = event.target.result;
-                resolve(this._db);
-            };
-
-            request.onerror = (event) => {
-                console.error('IndexedDB Error:', event.target.error);
-                reject(event.target.error);
-            };
-        });
-    },
-
     /**
      * データの一覧取得
      */
     async getAll(storeName) {
-        const db = await this.init();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction(storeName, 'readonly');
-            const store = transaction.objectStore(storeName);
-            const request = store.getAll();
-
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
+        if (!STORES.includes(storeName)) throw new Error('Invalid store: ' + storeName);
+        const { data, error } = await supabase.from(storeName).select('*');
+        if (error) {
+            console.error('Supabase getAll Error:', error);
+            return [];
+        }
+        return data || [];
     },
 
     /**
      * 単一データの取得
      */
     async get(storeName, id) {
-        const db = await this.init();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction(storeName, 'readonly');
-            const store = transaction.objectStore(storeName);
-            const request = store.get(id);
+        if (!STORES.includes(storeName)) throw new Error('Invalid store: ' + storeName);
+        const { data, error } = await supabase.from(storeName).select('*').eq('id', id).single();
+        if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+            console.error('Supabase get Error:', error);
+        }
+        return data || null;
+    },
 
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
+    async uploadImageIfBase64(dataUrl) {
+        if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return dataUrl;
+        
+        try {
+            // Convert Base64 to Blob
+            const response = await fetch(dataUrl);
+            const blob = await response.blob();
+            
+            // Generate unique filename
+            const ext = blob.type.split('/')[1] || 'jpeg';
+            const filename = `img_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${ext}`;
+            
+            // Upload to Supabase
+            const { data, error } = await supabase.storage.from('images').upload(filename, blob, {
+                cacheControl: '3600',
+                upsert: false
+            });
+            
+            if (error) throw error;
+            
+            // Get public URL
+            const { data: publicData } = supabase.storage.from('images').getPublicUrl(filename);
+            return publicData.publicUrl;
+        } catch (e) {
+            console.error('Image upload failed:', e);
+            return dataUrl; // fallback to base64 if upload fails
+        }
+    },
+
+    async processCardImages(card) {
+        if (card.image_url) card.image_url = await this.uploadImageIfBase64(card.image_url);
+        if (card.image_url_back) card.image_url_back = await this.uploadImageIfBase64(card.image_url_back);
+        if (card.gallery && Array.isArray(card.gallery)) {
+            for (let i = 0; i < card.gallery.length; i++) {
+                card.gallery[i] = await this.uploadImageIfBase64(card.gallery[i]);
+            }
+        }
     },
 
     /**
      * データの追加・更新（単一または配列）
      */
     async put(storeName, data) {
-        const db = await this.init();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction(storeName, 'readwrite');
-            const store = transaction.objectStore(storeName);
-
-            if (Array.isArray(data)) {
-                data.forEach(item => store.put(item));
-            } else {
-                store.put(data);
+        if (!STORES.includes(storeName)) throw new Error('Invalid store: ' + storeName);
+        
+        // Ensure array for upsert
+        const records = Array.isArray(data) ? data : [data];
+        
+        // Process images if storing cards
+        if (storeName === 'cards') {
+            for (const record of records) {
+                await this.processCardImages(record);
             }
-
-            transaction.oncomplete = () => resolve();
-            transaction.onerror = () => reject(transaction.error);
-        });
+        }
+        
+        const { error } = await supabase.from(storeName).upsert(records);
+        if (error) {
+            console.error('Supabase put Error:', error);
+            throw error;
+        }
     },
 
     /**
      * データの削除
      */
     async delete(storeName, id) {
-        const db = await this.init();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction(storeName, 'readwrite');
-            const store = transaction.objectStore(storeName);
-            const request = store.delete(id);
-
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-        });
+        if (!STORES.includes(storeName)) throw new Error('Invalid store: ' + storeName);
+        const { error } = await supabase.from(storeName).delete().eq('id', id);
+        if (error) {
+            console.error('Supabase delete Error:', error);
+            throw error;
+        }
     }
 };
