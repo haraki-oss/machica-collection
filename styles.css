@@ -170,13 +170,16 @@ button {
 .lang-switch {
     display: flex;
     gap: 4px;
-    margin-left: 16px;
     align-items: center;
 }
 
+.lang-switch--header {
+    margin-left: 12px;
+}
+
 .lang-btn {
-    padding: 4px 8px;
-    font-size: 0.8rem;
+    padding: 4px 10px;
+    font-size: 0.78rem;
     font-weight: 700;
     border: 1px solid var(--border);
     border-radius: 4px;
@@ -184,6 +187,7 @@ button {
     color: var(--text-muted);
     cursor: pointer;
     transition: all var(--transition);
+    font-family: inherit;
 }
 
 .lang-btn:hover {
@@ -195,6 +199,21 @@ button {
     background: var(--primary);
     color: #fff;
     border-color: var(--primary);
+}
+
+/* モバイル版言語スイッチ（ハンバーガーメニュー内） */
+.lang-switch--mobile {
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    gap: 8px;
+}
+
+.lang-switch--mobile .lang-btn {
+    flex: 1;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    text-align: center;
 }
 
 .hamburger {
@@ -1330,6 +1349,25 @@ button {
 @media (max-width: 768px) {
     .header-nav {
         display: none;
+    }
+
+    .lang-switch--header {
+        display: none;
+    }
+
+    /* MY LIKES はモバイルでも表示。labelは省略してコンパクトに */
+    .my-likes-toggle {
+        margin-left: auto;
+        padding: 5px 10px;
+        gap: 5px;
+    }
+
+    .my-likes-toggle .my-likes-label {
+        display: none;
+    }
+
+    .my-likes-toggle .my-likes-icon {
+        font-size: 1rem;
     }
 
     .hamburger {

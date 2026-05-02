@@ -251,16 +251,6 @@ function bindFilterAutoHide() {
 function updateLanguageUI() {
     document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.lang === state.lang);
-        // インラインスタイルの調整
-        if (btn.dataset.lang === state.lang) {
-            btn.style.background = '#fff';
-            btn.style.color = '#333';
-            btn.style.opacity = '1';
-        } else {
-            btn.style.background = '#f0f0f0';
-            btn.style.color = '#999';
-            btn.style.opacity = '0.7';
-        }
     });
 
     // テキスト要素の更新（machica collection ブランド版）
