@@ -112,6 +112,14 @@ button {
 
 .logo-icon {
     font-size: 1.6rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+.logo-icon img {
+    height: 1.6rem;
+    width: auto;
+    display: block;
 }
 
 .header-nav {
@@ -1190,7 +1198,7 @@ button {
         gap: 20px;
     }
 }
- / *   â0ü0À0ë0…Q«0Æ0´0ê0ü0¢0¤0³0ó0  * / 
+ / *   ï¿½0ï¿½0ï¿½0ï¿½0ï¿½Qï¿½0ï¿½0ï¿½0ï¿½0ï¿½0ï¿½0ï¿½0ï¿½0ï¿½0  * / 
  . m o d a l - c a t e g o r y   . c a t e g o r y - i c o n - i m g , 
  . m o d a l - b a d g e   . c a t e g o r y - i c o n - i m g   { 
          w i d t h :   2 0 p x ; 
