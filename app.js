@@ -265,15 +265,20 @@ async function getAllAreasAsync() {
         return edited ? { ...a, ...edited } : a;
     });
     areas = areas.filter(a => !deletedIds.includes(a.id));
-    return [...areas, ...customAreas];
+    // IDで重複排除（カスタムを優先）してマージ
+    const customIds = new Set(customAreas.map(a => a.id));
+    return [...areas.filter(a => !customIds.has(a.id)), ...customAreas];
 }
 
 async function getAllCategoriesAsync() {
     const customCats = await machicaDB.getAll('categories');
     const settings = await machicaDB.getAll('settings');
     const deletedIds = settings.find(s => s.id === 'deleted_category_ids')?.value || [];
-    let categories = CATEGORIES_DATA.filter(c => !deletedIds.includes(c.id));
-    return [...categories, ...customCats];
+    const defaults = CATEGORIES_DATA.filter(c => !deletedIds.includes(c.id));
+    // IDで重複排除（カスタムを優先）してマージ
+    const customIds = new Set(customCats.map(c => c.id));
+    const merged = [...defaults.filter(c => !customIds.has(c.id)), ...customCats];
+    return merged.sort((a, b) => a.id - b.id);
 }
 
 // ── ジャンルフィルター ────────────────────────────
