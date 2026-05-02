@@ -1073,6 +1073,7 @@ button {
     background: var(--bg-white);
     border-top: 1px solid var(--border);
     padding: 28px 24px;
+    font-family: 'Noto Sans JP', 'Yu Gothic', 'YuGothic', 'Hiragino Kaku Gothic ProN', sans-serif;
 }
 
 .footer-inner {
@@ -1089,7 +1090,7 @@ button {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-family: 'Playfair Display', serif;
+    font-family: inherit;
     font-size: 1.1rem;
     font-weight: 700;
     color: var(--primary);
@@ -1098,6 +1099,7 @@ button {
 .footer-copy {
     font-size: 0.8rem;
     color: var(--text-muted);
+    font-family: inherit;
 }
 
 /* =====================================================
