@@ -171,14 +171,14 @@ function updateLanguageUI() {
         }
     });
 
-    // テキスト要素の更新
+    // テキスト要素の更新（machica collection ブランド版）
     const t_hero_title = {
-        ja: '地域のスポットを<br>カードで集めよう',
-        en: 'Collect Local<br>Spot Cards'
+        ja: 'machica collection',
+        en: 'machica collection'
     };
     const t_hero_sub = {
-        ja: '飲食店、カフェ、観光地、体験スポット…<br>あなただけのコレクションを作ろう。',
-        en: 'Restaurants, cafes, sightseeing spots...<br>Create your own unique collection.'
+        ja: '<span class="hero-sub-en">One card, one new experience.</span><span class="hero-sub-ja">1枚のカードから、旅の新しい一歩を。</span>',
+        en: '<span class="hero-sub-en">One card, one new experience.</span><span class="hero-sub-ja">Begin a new chapter of your trip, in just one card.</span>'
     };
 
     const heroTitle = document.querySelector('.hero-title');
@@ -205,16 +205,25 @@ function updateLanguageUI() {
     applyFilters();
 }
 
+// 競合する非同期描画から後発の呼び出しのみ反映するための世代カウンタ
+let _areaRenderGen = 0;
+let _genreRenderGen = 0;
+
 async function populateAreaFilter() {
     const select = document.getElementById('areaSelect');
     if (!select) return;
 
+    const myGen = ++_areaRenderGen;
     const currentVal = state.area;
     const firstOpt = select.options[0];
-    select.innerHTML = '';
-    select.appendChild(firstOpt);
 
     const areas = await getAllAreasAsync();
+
+    // 後発の呼び出しが走り始めていたら自分の結果は捨てる
+    if (myGen !== _areaRenderGen) return;
+
+    select.innerHTML = '';
+    select.appendChild(firstOpt);
     areas.forEach(area => {
         if (area.id === 99) return;
         const opt = document.createElement('option');
@@ -229,6 +238,13 @@ async function renderGenreButtons() {
     const container = document.getElementById('genreFilters');
     if (!container) return;
 
+    const myGen = ++_genreRenderGen;
+
+    const categories = await getAllCategoriesAsync();
+
+    // 後発の呼び出しが走り始めていたら自分の結果は捨てる
+    if (myGen !== _genreRenderGen) return;
+
     container.innerHTML = '';
 
     // 「すべて」ボタン
@@ -239,7 +255,6 @@ async function renderGenreButtons() {
     allBtn.onclick = () => setGenre('all');
     container.appendChild(allBtn);
 
-    const categories = await getAllCategoriesAsync();
     categories.forEach(cat => {
         const btn = document.createElement('button');
         btn.className = `genre-btn ${state.genre == cat.id ? 'active' : ''}`;
