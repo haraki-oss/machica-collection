@@ -631,10 +631,10 @@ function buildMapFallback(lat, lng) {
        target="_blank" rel="noopener"
        style="display:flex;flex-direction:column;align-items:center;justify-content:center;
               height:100%;gap:12px;text-decoration:none;color:var(--primary);
-              background:#EFF6FF;">
+              background:#F4F4F2;">
       <span style="font-size:2rem;">🗺️</span>
       <span style="font-size:0.88rem;font-weight:600;">クリックして Google Maps で開く</span>
-      <span style="font-size:0.75rem;color:#94A3B8;">${lat.toFixed(4)}, ${lng.toFixed(4)}</span>
+      <span style="font-size:0.75rem;color:#A1A3A0;">${lat.toFixed(4)}, ${lng.toFixed(4)}</span>
     </a>
   `;
 }

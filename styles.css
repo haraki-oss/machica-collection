@@ -1,31 +1,41 @@
 /* =====================================================
-   machica - メインスタイルシート
-   ホワイトベース × ティール/ブルーアクセント
+   AMANEK machi FAVE - メインスタイルシート
+   AMANEK CI準拠：アマネク・ブラック × アマネク・グレー
    ===================================================== */
 
-/* CSS変数 */
+/* CSS変数 (AMANEK Corporate Identity) */
 :root {
-    --primary: #2563EB;
-    --primary-light: #3B82F6;
-    --primary-dark: #1D4ED8;
-    --accent: #0EA5E9;
-    --accent-soft: #E0F2FE;
+    /* コーポレートカラー（基本） */
+    --amanek-black: #1E1B19;
+    --amanek-gray: #A1A3A0;
 
-    --text-primary: #1E293B;
-    --text-secondary: #475569;
-    --text-muted: #94A3B8;
+    /* 派生：プライマリ（黒） */
+    --primary: #1E1B19;
+    --primary-light: #3A3735;
+    --primary-dark: #000000;
 
-    --bg-base: #F8FAFC;
+    /* 派生：アクセント（グレー） */
+    --accent: #A1A3A0;
+    --accent-soft: #F0F0EE;
+
+    /* テキスト */
+    --text-primary: #1E1B19;
+    --text-secondary: #5A5854;
+    --text-muted: #A1A3A0;
+
+    /* 背景 */
+    --bg-base: #FAFAF9;
     --bg-white: #FFFFFF;
-    --bg-soft: #F1F5F9;
+    --bg-soft: #F4F4F2;
 
-    --border: #E2E8F0;
-    --border-light: #F1F5F9;
+    /* ボーダー */
+    --border: #E5E4E1;
+    --border-light: #F0F0EE;
 
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
-    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
-    --shadow-hover: 0 20px 60px rgba(37, 99, 235, 0.15), 0 8px 24px rgba(0, 0, 0, 0.08);
+    --shadow-sm: 0 1px 3px rgba(30, 27, 25, 0.06), 0 1px 2px rgba(30, 27, 25, 0.04);
+    --shadow-md: 0 4px 16px rgba(30, 27, 25, 0.08), 0 2px 6px rgba(30, 27, 25, 0.04);
+    --shadow-lg: 0 12px 40px rgba(30, 27, 25, 0.12), 0 4px 12px rgba(30, 27, 25, 0.06);
+    --shadow-hover: 0 20px 60px rgba(30, 27, 25, 0.15), 0 8px 24px rgba(30, 27, 25, 0.08);
 
     --radius-sm: 8px;
     --radius-md: 14px;
@@ -51,11 +61,12 @@ html {
 }
 
 body {
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'Yu Gothic', 'YuGothic', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', 'MS PGothic', sans-serif;
     background: var(--bg-base);
     color: var(--text-primary);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
+    letter-spacing: 0.02em;
 }
 
 img {
@@ -102,11 +113,12 @@ button {
 .logo {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-family: 'Playfair Display', serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--primary);
+    gap: 12px;
+    font-family: 'Arial', 'Helvetica Neue', 'Helvetica', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    color: var(--amanek-black);
     flex-shrink: 0;
 }
 
@@ -219,7 +231,7 @@ button {
    ヒーローセクション
    ===================================================== */
 .hero {
-    background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 40%, #E0F2FE 100%);
+    background: linear-gradient(180deg, #FAFAF9 0%, #F4F4F2 100%);
     padding: 80px 24px 60px;
     text-align: center;
     border-bottom: 1px solid var(--border);
@@ -234,7 +246,7 @@ button {
     right: -60px;
     width: 320px;
     height: 320px;
-    background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(30, 27, 25, 0.05) 0%, transparent 70%);
     border-radius: 50%;
 }
 
@@ -245,7 +257,7 @@ button {
     left: -40px;
     width: 260px;
     height: 260px;
-    background: radial-gradient(circle, rgba(14, 165, 233, 0.08) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(161, 163, 160, 0.18) 0%, transparent 70%);
     border-radius: 50%;
 }
 
@@ -266,7 +278,7 @@ button {
 }
 
 .hero-title {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Yu Gothic', 'YuGothic', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
     font-size: clamp(1.8rem, 5vw, 3rem);
     font-weight: 700;
     color: var(--text-primary);
@@ -344,7 +356,7 @@ button {
 
 .search-box:focus-within {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    box-shadow: 0 0 0 3px rgba(30, 27, 25, 0.12);
     background: var(--bg-white);
 }
 
@@ -420,7 +432,7 @@ button {
     background: var(--primary);
     border-color: var(--primary);
     color: #fff;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 2px 8px rgba(30, 27, 25, 0.3);
 }
 
 .genre-btn .category-icon-img {
@@ -450,7 +462,7 @@ button {
 .area-select:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    box-shadow: 0 0 0 3px rgba(30, 27, 25, 0.12);
 }
 
 /* 結果件数 */
@@ -623,7 +635,7 @@ button {
     left: 0;
     right: 0;
     padding: 32px 14px 14px;
-    background: linear-gradient(to top, rgba(15, 23, 42, 0.75) 0%, rgba(15, 23, 42, 0.3) 60%, transparent 100%);
+    background: linear-gradient(to top, rgba(30, 27, 25, 0.75) 0%, rgba(30, 27, 25, 0.3) 60%, transparent 100%);
     border-radius: 0;
     /* card-image-wrapのradiusが効く */
 }
@@ -703,7 +715,7 @@ button {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba(30, 27, 25, 0.5);
     backdrop-filter: blur(6px);
     z-index: 200;
     display: flex;
@@ -863,7 +875,7 @@ button {
 .modal-thumb.active {
     border-color: var(--primary);
     opacity: 1;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 2px 8px rgba(30, 27, 25, 0.3);
 }
 
 .modal-badge {
@@ -1005,7 +1017,7 @@ button {
     transition: background var(--transition),
         transform var(--transition),
         box-shadow var(--transition);
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 4px 14px rgba(30, 27, 25, 0.3);
     flex: 1;
     justify-content: center;
     cursor: pointer;
@@ -1016,7 +1028,7 @@ button {
 .btn-primary:hover {
     background: var(--primary-dark);
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+    box-shadow: 0 8px 20px rgba(30, 27, 25, 0.35);
 }
 
 .btn-secondary {

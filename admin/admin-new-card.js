@@ -435,9 +435,9 @@ function bindGMapPaste() {
         if (!result && /goo\.gl|maps\.app|bit\.ly/i.test(url)) {
             if (resultEl) {
                 resultEl.style.display = 'block';
-                resultEl.style.background = '#EFF6FF';
-                resultEl.style.borderColor = '#BFDBFE';
-                resultEl.style.color = '#1E3A8A';
+                resultEl.style.background = '#F4F4F2';
+                resultEl.style.borderColor = '#E5E4E1';
+                resultEl.style.color = '#1E1B19';
                 resultEl.textContent = '🔄 URLを展開して座標を取得中…';
             }
             try {

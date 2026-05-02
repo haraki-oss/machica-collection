@@ -1,27 +1,30 @@
 /* ==================================================
-   管理サイト共通スタイル
+   管理サイト共通スタイル (AMANEK CI準拠)
    ================================================== */
 :root {
-    --primary: #2563EB;
-    --primary-light: #3B82F6;
-    --primary-dark: #1D4ED8;
-    --accent: #0EA5E9;
-    --accent-soft: #E0F2FE;
+    --amanek-black: #1E1B19;
+    --amanek-gray: #A1A3A0;
 
-    --text-primary: #1E293B;
-    --text-secondary: #475569;
-    --text-muted: #94A3B8;
+    --primary: #1E1B19;
+    --primary-light: #3A3735;
+    --primary-dark: #000000;
+    --accent: #A1A3A0;
+    --accent-soft: #F0F0EE;
 
-    --bg-base: #F8FAFC;
+    --text-primary: #1E1B19;
+    --text-secondary: #5A5854;
+    --text-muted: #A1A3A0;
+
+    --bg-base: #FAFAF9;
     --bg-white: #FFFFFF;
-    --bg-soft: #F1F5F9;
+    --bg-soft: #F4F4F2;
 
-    --border: #E2E8F0;
-    --border-light: #F1F5F9;
+    --border: #E5E4E1;
+    --border-light: #F0F0EE;
 
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
-    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+    --shadow-sm: 0 1px 3px rgba(30, 27, 25, 0.06), 0 1px 2px rgba(30, 27, 25, 0.04);
+    --shadow-md: 0 4px 16px rgba(30, 27, 25, 0.08), 0 2px 6px rgba(30, 27, 25, 0.04);
+    --shadow-lg: 0 12px 40px rgba(30, 27, 25, 0.12), 0 4px 12px rgba(30, 27, 25, 0.06);
 
     --radius-sm: 8px;
     --radius-md: 14px;
@@ -40,12 +43,13 @@
 }
 
 body {
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'Yu Gothic', 'YuGothic', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', 'MS PGothic', sans-serif;
     background: var(--bg-base);
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
     display: flex;
+    letter-spacing: 0.02em;
 }
 
 a {
@@ -85,7 +89,7 @@ img {
     align-items: center;
     gap: 10px;
     padding: 24px 20px;
-    font-family: 'Playfair Display', serif;
+    font-family: 'Arial', 'Helvetica Neue', sans-serif;
     font-size: 1.2rem;
     font-weight: 700;
     color: var(--primary);
@@ -215,7 +219,7 @@ img {
 }
 
 .stat-card-value {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Arial', 'Helvetica Neue', sans-serif;
     font-size: 2rem;
     font-weight: 700;
     color: var(--primary);
@@ -284,7 +288,7 @@ img {
 }
 
 .admin-table tr:hover td {
-    background: #FAFBFF;
+    background: var(--bg-soft);
 }
 
 .table-thumb,
@@ -352,7 +356,7 @@ img {
     border: none;
     cursor: pointer;
     transition: all var(--transition);
-    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.25);
+    box-shadow: 0 2px 10px rgba(30, 27, 25, 0.25);
     text-decoration: none;
 }
 
@@ -426,7 +430,7 @@ img {
 
 .form-control:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 3px rgba(30, 27, 25, 0.1);
 }
 
 textarea.form-control {
@@ -474,7 +478,7 @@ textarea.form-control {
     left: 0;
     width: 100%;
     height: 100vh;
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(30, 27, 25, 0.6);
     backdrop-filter: blur(4px);
     display: none;
     align-items: center;
@@ -534,7 +538,7 @@ textarea.form-control {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    background: #1E293B;
+    background: var(--amanek-black);
     color: #fff;
     padding: 12px 20px;
     border-radius: 12px;

@@ -4,9 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>スキャン登録 | machica Admin</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="admin.css" />
     <style>
         .scan-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 24px; align-items: start; }
@@ -26,14 +23,14 @@
 
         .status-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; border-radius: 8px; font-size: 0.83rem; font-weight: 500; margin-bottom: 8px; border: 1px solid transparent; }
         .status-item.idle { background: var(--bg-soft); color: var(--text-muted); border-color: var(--border); }
-        .status-item.scanning { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
+        .status-item.scanning { background: var(--bg-soft); color: var(--amanek-black); border-color: var(--border); }
         .status-item.ok { background: #F0FFF4; color: #166534; border-color: #BBF7D0; }
         .status-item.err { background: #FEF2F2; color: #991B1B; border-color: #FECACA; }
         .spin { display: inline-block; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .ocr-section { margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border); }
-        .qr-url-box { background: #F8FAFC; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; word-break: break-all; color: var(--text-muted); margin-top: 8px; }
+        .qr-url-box { background: #FAFAF9; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; word-break: break-all; color: var(--text-muted); margin-top: 8px; }
         .change-btn { position: absolute; bottom: 8px; right: 8px; background: rgba(255,255,255,0.9); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 0.75rem; cursor: pointer; }
     </style>
     <script src="auth.js"></script>
@@ -42,7 +39,7 @@
     <aside class="admin-sidebar">
         <div class="sidebar-logo">
             <span>🗾</span><span>machica</span>
-            <span style="font-size:0.7rem;font-weight:500;color:#94A3B8;margin-left:auto;">Admin</span>
+            <span style="font-size:0.7rem;font-weight:500;color:#A1A3A0;margin-left:auto;">Admin</span>
         </div>
         <nav class="sidebar-nav">
             <p class="sidebar-section-label">メニュー</p>

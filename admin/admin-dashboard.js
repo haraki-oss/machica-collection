@@ -57,7 +57,7 @@ function renderGenreStats() {
           ${iconHtml}
           <span style="font-size:0.88rem;font-weight:600;color:var(--text-primary);">${cat.name}</span>
         </div>
-        <div style="flex:1;background:#F1F5F9;border-radius:100px;height:8px;overflow:hidden;">
+        <div style="flex:1;background:#F4F4F2;border-radius:100px;height:8px;overflow:hidden;">
           <div style="width:${pct}%;height:100%;background:${cat.color || '#ccc'};border-radius:100px;transition:width 0.8s ease;"></div>
         </div>
         <span style="font-size:0.82rem;color:var(--text-muted);width:40px;text-align:right;">${count}件</span>
