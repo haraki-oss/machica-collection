@@ -1347,6 +1347,25 @@ button {
    レスポンシブ
    ===================================================== */
 @media (max-width: 768px) {
+    /* ヘッダーがロゴ＋MY LIKES＋ハンバーガーで詰まらないよう全体的に詰める */
+    .header-inner {
+        padding: 0 14px;
+        gap: 10px;
+    }
+
+    .logo {
+        font-size: 1.05rem;
+        gap: 8px;
+        letter-spacing: 0.04em;
+        min-width: 0; /* テキストが省略できるように */
+    }
+
+    .logo-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     .header-nav {
         display: none;
     }
@@ -1358,8 +1377,9 @@ button {
     /* MY LIKES はモバイルでも表示。labelは省略してコンパクトに */
     .my-likes-toggle {
         margin-left: auto;
-        padding: 5px 10px;
+        padding: 5px 9px;
         gap: 5px;
+        flex-shrink: 0;
     }
 
     .my-likes-toggle .my-likes-label {
@@ -1372,6 +1392,8 @@ button {
 
     .hamburger {
         display: flex;
+        padding: 6px;
+        flex-shrink: 0;
     }
 
     .hero {
@@ -1468,6 +1490,16 @@ button {
         /* 縦型カードはスマホで2列表示 */
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
+    }
+
+    /* 極小画面：ロゴ文字は省略してアイコンだけにする */
+    .logo-text {
+        display: none;
+    }
+
+    .header-inner {
+        padding: 0 12px;
+        gap: 8px;
     }
 }
 
