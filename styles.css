@@ -1290,6 +1290,29 @@ button {
     color: var(--primary);
 }
 
+.footer-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: inherit;
+}
+
+.footer-admin-link {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    transition: all var(--transition);
+    font-family: inherit;
+}
+
+.footer-admin-link:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: var(--accent-soft);
+}
+
 .footer-copy {
     font-size: 0.8rem;
     color: var(--text-muted);
