@@ -18,6 +18,7 @@ let state = {
     map: null,
     marker: null,
     mapsLoaded: false,
+    showLikedOnly: false, // MY LIKES モード
 };
 
 // ── Google Maps APIキー ──────────────────────────
@@ -150,6 +151,46 @@ function bindEvents() {
     });
 
     bindFilterAutoHide();
+    bindMyLikes();
+}
+
+// ── MY LIKES モード切替 ──────────────────────────
+function bindMyLikes() {
+    const toggle = document.getElementById('myLikesToggle');
+    const bannerClose = document.getElementById('myLikesBannerClose');
+    const exitBtn = document.getElementById('exitMyLikes');
+
+    toggle?.addEventListener('click', () => {
+        state.showLikedOnly = !state.showLikedOnly;
+        applyFilters();
+    });
+
+    const exitMyLikes = () => {
+        if (!state.showLikedOnly) return;
+        state.showLikedOnly = false;
+        applyFilters();
+    };
+    bannerClose?.addEventListener('click', exitMyLikes);
+    exitBtn?.addEventListener('click', exitMyLikes);
+
+    updateMyLikesUI();
+}
+
+function updateMyLikesUI() {
+    const liked = getLocalLiked();
+    const count = liked.size;
+
+    // ヘッダーのトグル
+    const toggle = document.getElementById('myLikesToggle');
+    const countEl = document.getElementById('myLikesCount');
+    if (toggle) toggle.setAttribute('aria-pressed', state.showLikedOnly ? 'true' : 'false');
+    if (countEl) countEl.textContent = count;
+
+    // バナー
+    const banner = document.getElementById('myLikesBanner');
+    const bannerCount = document.getElementById('myLikesBannerCount');
+    if (banner) banner.style.display = state.showLikedOnly ? 'flex' : 'none';
+    if (bannerCount) bannerCount.textContent = count;
 }
 
 // フィルターセクションのオートハイド
@@ -383,8 +424,10 @@ function setGenre(genreId) {
 // ── フィルター適用 ────────────────────────────────
 function applyFilters() {
     const kw = state.keyword.toLowerCase();
+    const likedSet = state.showLikedOnly ? getLocalLiked() : null;
 
     state.filtered = state.cards.filter(card => {
+        if (likedSet && !likedSet.has(String(card.id))) return false;
         const matchKeyword = !kw || card.title.toLowerCase().includes(kw) || card.description.toLowerCase().includes(kw);
         const matchGenre = state.genre === 'all' || card.category_id == state.genre;
         const matchArea = state.area === 'all' || card.area === state.area;
@@ -392,6 +435,7 @@ function applyFilters() {
     });
 
     renderCards(state.filtered);
+    updateMyLikesUI();
 }
 
 function resetFilters() {
@@ -411,6 +455,7 @@ function resetFilters() {
 function renderCards(cards) {
     const grid = document.getElementById('cardGrid');
     const noResults = document.getElementById('noResults');
+    const noLikes = document.getElementById('noLikes');
     const resultCount = document.getElementById('resultCount');
 
     if (!grid) return;
@@ -419,11 +464,19 @@ function renderCards(cards) {
 
     if (cards.length === 0) {
         grid.innerHTML = '';
-        if (noResults) noResults.style.display = 'block';
+        // MY LIKES モードかつローカルに Like 履歴がゼロなら専用空状態を表示
+        if (state.showLikedOnly && getLocalLiked().size === 0) {
+            if (noLikes) noLikes.style.display = 'block';
+            if (noResults) noResults.style.display = 'none';
+        } else {
+            if (noResults) noResults.style.display = 'block';
+            if (noLikes) noLikes.style.display = 'none';
+        }
         return;
     }
 
     if (noResults) noResults.style.display = 'none';
+    if (noLikes) noLikes.style.display = 'none';
 
     grid.innerHTML = cards.map((card, i) => createCardHTML(card, i)).join('');
 
@@ -736,6 +789,10 @@ async function setupLikeButton(card) {
             // サーバーの最新値で上書き表示
             count = nextCount;
             applyState(liked, count);
+
+            // ヘッダーのバッジ＆MY LIKES モード時は一覧側も再フィルタ
+            updateMyLikesUI();
+            if (state.showLikedOnly) applyFilters();
         } catch (e) {
             // ロールバック
             liked = !goingToLike;

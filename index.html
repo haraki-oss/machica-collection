@@ -24,6 +24,11 @@
             <nav class="header-nav">
                 <a href="index.html" class="nav-link active">カード一覧</a>
                 <a href="map.html" class="nav-link">地図で見る</a>
+                <button class="my-likes-toggle" id="myLikesToggle" type="button" aria-pressed="false" aria-label="MY LIKES を表示">
+                    <span class="my-likes-icon">♡</span>
+                    <span class="my-likes-label">MY LIKES</span>
+                    <span class="my-likes-count" id="myLikesCount">0</span>
+                </button>
                 <a href="admin/index.html" class="nav-link admin-link">管理画面</a>
                 <div class="lang-switch" style="display:flex;gap:4px;margin-left:8px;">
                     <button class="lang-btn active" data-lang="ja"
@@ -82,12 +87,23 @@
 
     <!-- カードグリッド -->
     <main class="cards-section">
+        <!-- MY LIKES モード時のバナー -->
+        <div class="my-likes-banner" id="myLikesBanner" style="display:none;">
+            <span class="my-likes-banner-icon">♥</span>
+            <span class="my-likes-banner-text">MY LIKES <span id="myLikesBannerCount">0</span> 件</span>
+            <button class="my-likes-banner-close" id="myLikesBannerClose" type="button" aria-label="MY LIKES を閉じる">✕</button>
+        </div>
         <div class="card-grid" id="cardGrid">
             <!-- JSで動的生成 -->
         </div>
         <div class="no-results" id="noResults" style="display:none;">
             <p>🔍 条件に合うスポットが見つかりませんでした</p>
             <button class="btn-secondary" onclick="resetFilters()">フィルターをリセット</button>
+        </div>
+        <div class="no-likes" id="noLikes" style="display:none;">
+            <p>♡ まだLIKEしたカードがありません</p>
+            <p style="font-size:0.85rem;color:var(--text-muted);">気に入ったカードを開いて LIKE を押すと、ここに表示されます。</p>
+            <button class="btn-secondary" id="exitMyLikes">すべてのカードを見る</button>
         </div>
     </main>
 
