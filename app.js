@@ -599,15 +599,21 @@ function openModal(cardId) {
         badge.style.backdropFilter = 'blur(8px)';
     }
 
-    // Googleルート検索ボタン
+    // Google Maps で該当スポットを表示するリンク
+    // ルート検索ではなく、スポット名+住所で検索してビジネス情報を表示する
     const routeBtn = document.getElementById('routeBtn');
     const lat = card.lat || card.latitude;
     const lng = card.lng || card.longitude;
     if (routeBtn) {
-        if (lat && lng) {
-            routeBtn.href = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+        const query = encodeURIComponent(
+            [card.title, card.address].filter(Boolean).join(' ')
+        );
+        if (query) {
+            routeBtn.href = `https://www.google.com/maps/search/?api=1&query=${query}`;
+        } else if (lat && lng) {
+            routeBtn.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
         } else {
-            routeBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.address)}`;
+            routeBtn.href = 'https://www.google.com/maps';
         }
     }
 
