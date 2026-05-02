@@ -1492,14 +1492,25 @@ button {
         gap: 10px;
     }
 
-    /* 極小画面：ロゴ文字は省略してアイコンだけにする */
-    .logo-text {
-        display: none;
-    }
-
+    /* 極小画面：ロゴは縮めるが文字は残す */
     .header-inner {
         padding: 0 12px;
         gap: 8px;
+    }
+
+    .logo {
+        font-size: 0.88rem;
+        gap: 6px;
+        letter-spacing: 0.03em;
+    }
+
+    .logo-icon img {
+        height: 1.3rem;
+    }
+
+    /* MY LIKES はもう一段コンパクトに */
+    .my-likes-toggle {
+        padding: 4px 8px;
     }
 }
 
