@@ -154,6 +154,59 @@ function bindEvents() {
             imgEl.src = backUrl;
         }
     });
+
+    bindFilterAutoHide();
+}
+
+// フィルターセクションのオートハイド
+// - 縦スクロールで一定量下に進むと隠れる
+// - 上向きスクロールで再表示
+// - 画面上部にマウスを近づけたとき再表示
+function bindFilterAutoHide() {
+    const filter = document.querySelector('.filter-section');
+    if (!filter) return;
+
+    const HIDE_THRESHOLD = 180; // hero を抜けたあたりから隠し始める
+    const HOVER_REVEAL = 90;    // viewport top からこの距離以内に cursor が来たら表示
+
+    let mouseAtTop = false;
+    let lastScrollY = window.scrollY;
+    let scrollingUp = false;
+
+    function evaluate() {
+        const y = window.scrollY;
+        const passed = y > HIDE_THRESHOLD;
+        const shouldShow = mouseAtTop || !passed || scrollingUp;
+        filter.classList.toggle('is-hidden', !shouldShow);
+    }
+
+    window.addEventListener('scroll', () => {
+        const y = window.scrollY;
+        scrollingUp = y < lastScrollY;
+        lastScrollY = y;
+        evaluate();
+    }, { passive: true });
+
+    document.addEventListener('mousemove', (e) => {
+        const next = e.clientY < HOVER_REVEAL;
+        if (next !== mouseAtTop) {
+            mouseAtTop = next;
+            evaluate();
+        }
+    });
+
+    // タッチデバイス用：上部タップでも一度だけ復活
+    document.addEventListener('touchstart', (e) => {
+        const t = e.touches && e.touches[0];
+        if (t && t.clientY < HOVER_REVEAL) {
+            mouseAtTop = true;
+            evaluate();
+            // 5秒後に解除
+            setTimeout(() => { mouseAtTop = false; evaluate(); }, 5000);
+        }
+    }, { passive: true });
+
+    evaluate();
 }
 
 function updateLanguageUI() {
