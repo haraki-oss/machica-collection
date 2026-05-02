@@ -624,9 +624,105 @@ function openModal(cardId) {
     // 地図初期化
     initModalMap(card);
 
+    // LIKE ボタン初期化
+    setupLikeButton(card);
+
     // モーダルを開く
     document.getElementById('modalOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';
+}
+
+// ── LIKE ボタン制御 ──────────────────────────────
+const LIKES_SETTINGS_KEY = 'card_likes';
+const LOCAL_LIKED_KEY = 'machica_liked_cards';
+
+function getLocalLiked() {
+    try {
+        return new Set(JSON.parse(localStorage.getItem(LOCAL_LIKED_KEY) || '[]'));
+    } catch (e) {
+        return new Set();
+    }
+}
+
+function markLocalLiked(cardId) {
+    const set = getLocalLiked();
+    set.add(String(cardId));
+    localStorage.setItem(LOCAL_LIKED_KEY, JSON.stringify([...set]));
+}
+
+async function fetchLikesMap() {
+    try {
+        const settings = await machicaDB.getAll('settings');
+        const row = settings.find(s => s.id === LIKES_SETTINGS_KEY);
+        return (row && row.value && typeof row.value === 'object') ? row.value : {};
+    } catch (e) {
+        console.error('fetchLikesMap failed:', e);
+        return {};
+    }
+}
+
+async function persistLikesMap(map) {
+    try {
+        await machicaDB.put('settings', { id: LIKES_SETTINGS_KEY, value: map });
+    } catch (e) {
+        console.error('persistLikesMap failed:', e);
+        throw e;
+    }
+}
+
+async function setupLikeButton(card) {
+    const btn = document.getElementById('likeBtn');
+    const countEl = document.getElementById('likeCount');
+    if (!btn || !countEl) return;
+
+    const cardKey = String(card.id);
+    const localLiked = getLocalLiked();
+    const alreadyLiked = localLiked.has(cardKey);
+
+    // 既存のリスナーを除去するため新しいボタンに置換
+    const fresh = btn.cloneNode(true);
+    btn.parentNode.replaceChild(fresh, btn);
+    const freshCountEl = fresh.querySelector('.like-count');
+
+    // 一旦カウントは前回値（あれば）で即時表示し、その後 Supabase の値で上書き
+    freshCountEl.textContent = '…';
+    fresh.classList.toggle('is-liked', alreadyLiked);
+    fresh.querySelector('.like-icon').textContent = alreadyLiked ? '♥' : '♡';
+
+    const likes = await fetchLikesMap();
+    let count = Number(likes[cardKey] || 0);
+    freshCountEl.textContent = count;
+
+    fresh.addEventListener('click', async () => {
+        if (getLocalLiked().has(cardKey)) return; // 多重押下防止
+        if (fresh.disabled) return;
+        fresh.disabled = true;
+
+        // 楽観的 UI 更新
+        count += 1;
+        freshCountEl.textContent = count;
+        fresh.classList.add('is-liked', 'is-pulsing');
+        fresh.querySelector('.like-icon').textContent = '♥';
+        setTimeout(() => fresh.classList.remove('is-pulsing'), 500);
+
+        try {
+            // 最新値を取得してから増分（粗い同時押下対策）
+            const current = await fetchLikesMap();
+            const next = { ...current, [cardKey]: Number(current[cardKey] || 0) + 1 };
+            await persistLikesMap(next);
+            markLocalLiked(cardKey);
+            freshCountEl.textContent = next[cardKey];
+            count = next[cardKey];
+        } catch (e) {
+            // ロールバック
+            count -= 1;
+            freshCountEl.textContent = count;
+            fresh.classList.remove('is-liked');
+            fresh.querySelector('.like-icon').textContent = '♡';
+            fresh.disabled = false;
+            alert('LIKEの保存に失敗しました。少し時間をおいて再試行してください。');
+        }
+    });
 }
 
 function closeModal() {
