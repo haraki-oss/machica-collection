@@ -265,9 +265,23 @@ async function getAllAreasAsync() {
         return edited ? { ...a, ...edited } : a;
     });
     areas = areas.filter(a => !deletedIds.includes(a.id));
-    // IDで重複排除（カスタムを優先）してマージ
-    const customIds = new Set(customAreas.map(a => a.id));
-    return [...areas.filter(a => !customIds.has(a.id)), ...customAreas];
+
+    // カスタム側の自己重複を slug 優先で排除
+    const seen = new Set();
+    const dedupedCustom = customAreas.filter(a => {
+        const key = a.slug || `id:${a.id}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+
+    // デフォルト側は slug / id どちらかで重複していたら除外
+    const customSlugs = new Set(dedupedCustom.map(a => a.slug).filter(Boolean));
+    const customIds = new Set(dedupedCustom.map(a => a.id));
+    return [
+        ...areas.filter(a => !customSlugs.has(a.slug) && !customIds.has(a.id)),
+        ...dedupedCustom,
+    ];
 }
 
 async function getAllCategoriesAsync() {
@@ -275,10 +289,24 @@ async function getAllCategoriesAsync() {
     const settings = await machicaDB.getAll('settings');
     const deletedIds = settings.find(s => s.id === 'deleted_category_ids')?.value || [];
     const defaults = CATEGORIES_DATA.filter(c => !deletedIds.includes(c.id));
-    // IDで重複排除（カスタムを優先）してマージ
-    const customIds = new Set(customCats.map(c => c.id));
-    const merged = [...defaults.filter(c => !customIds.has(c.id)), ...customCats];
-    return merged.sort((a, b) => a.id - b.id);
+
+    // カスタム側の自己重複を slug 優先で排除
+    const seen = new Set();
+    const dedupedCustom = customCats.filter(c => {
+        const key = c.slug || `id:${c.id}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+
+    // デフォルト側は slug / id どちらかでカスタムと重複していたら除外
+    const customSlugs = new Set(dedupedCustom.map(c => c.slug).filter(Boolean));
+    const customIds = new Set(dedupedCustom.map(c => c.id));
+    const merged = [
+        ...defaults.filter(c => !customSlugs.has(c.slug) && !customIds.has(c.id)),
+        ...dedupedCustom,
+    ];
+    return merged.sort((a, b) => (a.id || 0) - (b.id || 0));
 }
 
 // ── ジャンルフィルター ────────────────────────────
