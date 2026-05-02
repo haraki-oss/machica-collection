@@ -232,7 +232,7 @@ button {
    ===================================================== */
 .hero {
     background: linear-gradient(180deg, #FAFAF9 0%, #F4F4F2 100%);
-    padding: 80px 24px 60px;
+    padding: 44px 24px 36px;
     text-align: center;
     border-bottom: 1px solid var(--border);
     position: relative;
@@ -242,10 +242,10 @@ button {
 .hero::before {
     content: '';
     position: absolute;
-    top: -60px;
-    right: -60px;
-    width: 320px;
-    height: 320px;
+    top: -40px;
+    right: -40px;
+    width: 200px;
+    height: 200px;
     background: radial-gradient(circle, rgba(30, 27, 25, 0.05) 0%, transparent 70%);
     border-radius: 50%;
 }
@@ -253,10 +253,10 @@ button {
 .hero::after {
     content: '';
     position: absolute;
-    bottom: -80px;
-    left: -40px;
-    width: 260px;
-    height: 260px;
+    bottom: -60px;
+    left: -30px;
+    width: 180px;
+    height: 180px;
     background: radial-gradient(circle, rgba(161, 163, 160, 0.18) 0%, transparent 70%);
     border-radius: 50%;
 }
@@ -269,34 +269,38 @@ button {
 }
 
 .hero-eyebrow {
-    font-size: 0.8rem;
-    font-weight: 600;
-    letter-spacing: 0.15em;
+    font-family: 'Arial', 'Helvetica Neue', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--primary);
-    margin-bottom: 16px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
 }
 
 .hero-title {
     font-family: 'Yu Gothic', 'YuGothic', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
-    font-size: clamp(1.8rem, 5vw, 3rem);
+    font-size: clamp(1.3rem, 3.4vw, 2rem);
     font-weight: 700;
     color: var(--text-primary);
-    line-height: 1.35;
-    margin-bottom: 20px;
+    line-height: 1.45;
+    margin-bottom: 14px;
 }
 
 .hero-sub {
-    font-size: 1rem;
+    font-size: 0.88rem;
     color: var(--text-secondary);
-    line-height: 1.8;
-    margin-bottom: 40px;
+    line-height: 1.75;
+    margin-bottom: 24px;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .hero-stats {
     display: flex;
     justify-content: center;
-    gap: 48px;
+    gap: 32px;
     position: relative;
     z-index: 1;
 }
@@ -308,13 +312,14 @@ button {
 .stat-num {
     display: block;
     font-family: 'Arial', 'Helvetica Neue', sans-serif;
-    font-size: 2.2rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: var(--primary);
+    line-height: 1.2;
 }
 
 .stat-label {
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     color: var(--text-muted);
 }
 
@@ -1103,15 +1108,15 @@ button {
     }
 
     .hero {
-        padding: 60px 20px 40px;
+        padding: 32px 20px 26px;
     }
 
     .hero-stats {
-        gap: 28px;
+        gap: 22px;
     }
 
     .stat-num {
-        font-size: 1.7rem;
+        font-size: 1.3rem;
     }
 
     .filter-section {
