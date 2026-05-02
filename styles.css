@@ -1018,9 +1018,10 @@ button {
     gap: 6px;
     padding: 6px 12px;
     border-radius: 100px;
-    border: 1.5px solid var(--border);
-    background: var(--bg-white);
-    color: var(--text-secondary);
+    /* 初期状態でも軽くピンクのアクセント（発見性向上） */
+    border: 1.5px solid #F2C2CE;
+    background: #FFF5F8;
+    color: #C13257;
     font-family: inherit;
     font-size: 0.78rem;
     font-weight: 600;
@@ -1031,6 +1032,7 @@ button {
 
 .my-likes-toggle:hover:not([aria-pressed="true"]) {
     border-color: #E0245E;
+    background: #FDECEF;
     color: #E0245E;
 }
 
@@ -1040,16 +1042,19 @@ button {
     color: #E0245E;
 }
 
+/* ハートアイコン：CSS だけで ♡ ⇄ ♥ を切替（HTML 側はテキスト無し） */
 .my-likes-toggle .my-likes-icon {
     font-size: 0.95rem;
     line-height: 1;
+    display: inline-block;
+}
+
+.my-likes-toggle .my-likes-icon::before {
+    content: '♡';
 }
 
 .my-likes-toggle[aria-pressed="true"] .my-likes-icon::before {
     content: '♥';
-}
-.my-likes-toggle[aria-pressed="true"] .my-likes-icon {
-    color: #E0245E;
 }
 
 .my-likes-toggle .my-likes-count {
@@ -1058,9 +1063,9 @@ button {
     padding: 0 6px;
     font-size: 0.72rem;
     font-weight: 700;
-    background: var(--bg-soft);
+    background: #fff;
     border-radius: 100px;
-    color: var(--text-muted);
+    color: #C13257;
 }
 
 .my-likes-toggle[aria-pressed="true"] .my-likes-count {
