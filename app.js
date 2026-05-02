@@ -55,7 +55,6 @@ async function initCards() {
 
     state.filtered = [...state.cards];
     renderCards(state.filtered);
-    updateTotalCount();
 
     // URLパラメータのチェック（地図からの遷移など）
     const params = new URLSearchParams(window.location.search);
@@ -73,11 +72,6 @@ async function initCards() {
             window.history.replaceState({}, document.title, newUrl);
         }
     }
-}
-
-function updateTotalCount() {
-    const el = document.getElementById('totalCards');
-    if (el) el.textContent = state.cards.length;
 }
 
 // ── ジャンルボタンを動的生成 ───────────────────────

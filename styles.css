@@ -319,31 +319,6 @@ button {
     letter-spacing: 0.04em;
 }
 
-.hero-stats {
-    display: flex;
-    justify-content: center;
-    gap: 28px;
-    position: relative;
-    z-index: 1;
-}
-
-.stat-item {
-    text-align: center;
-}
-
-.stat-num {
-    display: block;
-    font-family: 'Arial', 'Helvetica Neue', sans-serif;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--primary);
-    line-height: 1.15;
-}
-
-.stat-label {
-    font-size: 0.68rem;
-    color: var(--text-muted);
-}
 
 /* =====================================================
    フィルターセクション
@@ -1141,14 +1116,6 @@ button {
         padding: 20px 20px 16px;
     }
 
-    .hero-stats {
-        gap: 18px;
-    }
-
-    .stat-num {
-        font-size: 1.1rem;
-    }
-
     .filter-section {
         position: static;
         padding: 20px 16px 16px;
@@ -1239,10 +1206,6 @@ button {
         /* 縦型カードはスマホで2列表示 */
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
-    }
-
-    .hero-stats {
-        gap: 20px;
     }
 }
 
