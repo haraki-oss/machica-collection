@@ -186,11 +186,15 @@ function updateMyLikesUI() {
     if (toggle) toggle.setAttribute('aria-pressed', state.showLikedOnly ? 'true' : 'false');
     if (countEl) countEl.textContent = count;
 
-    // バナー
+    // バナー本文を言語別に再描画（"MY LIKES n 件" / "MY LIKES n cards"）
     const banner = document.getElementById('myLikesBanner');
-    const bannerCount = document.getElementById('myLikesBannerCount');
     if (banner) banner.style.display = state.showLikedOnly ? 'flex' : 'none';
-    if (bannerCount) bannerCount.textContent = count;
+
+    const bannerText = banner?.querySelector('.my-likes-banner-text');
+    if (bannerText) {
+        const noun = state.lang === 'en' ? (count === 1 ? 'card' : 'cards') : '件';
+        bannerText.innerHTML = `MY LIKES <span id="myLikesBannerCount">${count}</span> ${noun}`;
+    }
 }
 
 // フィルターセクションのオートハイド
@@ -287,10 +291,83 @@ function updateLanguageUI() {
         resultCountLabel.innerHTML = `<span id="resultCount">${state.filtered.length}</span>${resultSuffix}`;
     }
 
+    // 検索プレースホルダー
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.placeholder = state.lang === 'en'
+            ? 'Search by spot or keyword…'
+            : 'スポット名・キーワードで検索…';
+    }
+
+    // ヘッダー / モバイルナビのリンクラベル
+    const navLabels = {
+        'index.html': { ja: 'カード一覧', en: 'Cards' },
+        'map.html':   { ja: '地図で見る', en: 'Map' },
+    };
+    document.querySelectorAll('.header-nav .nav-link, .mobile-nav .nav-link').forEach(a => {
+        const key = (a.getAttribute('href') || '').split('/').pop();
+        const t = navLabels[key];
+        if (t) a.textContent = t[state.lang] || t.ja;
+    });
+
+    // フッターの管理画面リンク
+    const footerAdmin = document.querySelector('.footer-admin-link');
+    if (footerAdmin) {
+        footerAdmin.textContent = state.lang === 'en' ? 'Admin' : '管理画面';
+    }
+
+    // 結果ゼロ時のメッセージ（条件不一致）
+    const noResultsP = document.querySelector('#noResults p');
+    if (noResultsP) {
+        noResultsP.textContent = state.lang === 'en'
+            ? '🔍 No spots match your filter'
+            : '🔍 条件に合うスポットが見つかりませんでした';
+    }
+    const noResultsBtn = document.querySelector('#noResults button');
+    if (noResultsBtn) {
+        noResultsBtn.textContent = state.lang === 'en' ? 'Reset filters' : 'フィルターをリセット';
+    }
+
+    // MY LIKES 空状態
+    const noLikesPs = document.querySelectorAll('#noLikes p');
+    if (noLikesPs[0]) {
+        noLikesPs[0].textContent = state.lang === 'en'
+            ? '♡ No liked cards yet'
+            : '♡ まだLIKEしたカードがありません';
+    }
+    if (noLikesPs[1]) {
+        noLikesPs[1].textContent = state.lang === 'en'
+            ? "Open a card you like and tap LIKE — it'll appear here."
+            : '気に入ったカードを開いて LIKE を押すと、ここに表示されます。';
+    }
+    const exitBtn = document.getElementById('exitMyLikes');
+    if (exitBtn) {
+        exitBtn.textContent = state.lang === 'en' ? 'Browse all cards' : 'すべてのカードを見る';
+    }
+
+    // MY LIKES トグルの aria-label
+    const myLikesToggle = document.getElementById('myLikesToggle');
+    if (myLikesToggle) {
+        myLikesToggle.setAttribute(
+            'aria-label',
+            state.lang === 'en' ? 'Show MY LIKES' : 'MY LIKES を表示'
+        );
+    }
+
+    // バナークローズボタンの aria-label
+    const bannerClose = document.getElementById('myLikesBannerClose');
+    if (bannerClose) {
+        bannerClose.setAttribute(
+            'aria-label',
+            state.lang === 'en' ? 'Close MY LIKES' : 'MY LIKES を閉じる'
+        );
+    }
+
     // 再描画
     renderGenreButtons();
     populateAreaFilter();
     applyFilters();
+    updateMyLikesUI();
 }
 
 // 競合する非同期描画から後発の呼び出しのみ反映するための世代カウンタ
