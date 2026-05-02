@@ -588,7 +588,11 @@ function openModal(cardId) {
     document.getElementById('modalDescription').textContent = desc;
     document.getElementById('modalAddress').textContent = address;
     document.getElementById('modalArea').textContent = areaName;
-    document.getElementById('modalCategory').innerHTML = cat ? `${getCategoryIcon(cat)} <span>${catName}</span>` : '';
+    // モーダルのジャンルバッジは廃止（旧 #modalCategory）。バッジは画像オーバーレイ側のみ。
+    const modalCategoryEl = document.getElementById('modalCategory');
+    if (modalCategoryEl) {
+        modalCategoryEl.innerHTML = cat ? `${getCategoryIcon(cat)} <span>${catName}</span>` : '';
+    }
 
     // バッジ
     const badge = document.getElementById('modalBadge');
