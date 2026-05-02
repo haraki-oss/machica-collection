@@ -122,6 +122,11 @@
             <div class="modal-body">
                 <div class="modal-meta">
                     <span class="modal-area" id="modalArea"></span>
+                    <button class="like-btn like-btn--compact" id="likeBtn" type="button" aria-label="このスポットをLIKE" aria-pressed="false">
+                        <span class="like-icon">♡</span>
+                        <span class="like-label">LIKE</span>
+                        <span class="like-count" id="likeCount">0</span>
+                    </button>
                 </div>
                 <h2 class="modal-title" id="modalTitle"></h2>
                 <p class="modal-description" id="modalDescription"></p>
@@ -138,11 +143,6 @@
                     <div id="googleMap" style="width:100%;height:100%;"></div>
                 </div>
                 <div class="modal-actions">
-                    <button class="like-btn" id="likeBtn" type="button" aria-label="このスポットをLIKE">
-                        <span class="like-icon">♡</span>
-                        <span class="like-label">LIKE</span>
-                        <span class="like-count" id="likeCount">0</span>
-                    </button>
                     <a href="#" class="btn-primary" id="routeBtn" target="_blank" rel="noopener">
                         <span>📍</span> Google Mapsで見る
                     </a>

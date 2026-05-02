@@ -650,6 +650,12 @@ function markLocalLiked(cardId) {
     localStorage.setItem(LOCAL_LIKED_KEY, JSON.stringify([...set]));
 }
 
+function unmarkLocalLiked(cardId) {
+    const set = getLocalLiked();
+    set.delete(String(cardId));
+    localStorage.setItem(LOCAL_LIKED_KEY, JSON.stringify([...set]));
+}
+
 async function fetchLikesMap() {
     try {
         const settings = await machicaDB.getAll('settings');
@@ -672,55 +678,72 @@ async function persistLikesMap(map) {
 
 async function setupLikeButton(card) {
     const btn = document.getElementById('likeBtn');
-    const countEl = document.getElementById('likeCount');
-    if (!btn || !countEl) return;
+    if (!btn) return;
 
     const cardKey = String(card.id);
-    const localLiked = getLocalLiked();
-    const alreadyLiked = localLiked.has(cardKey);
 
     // 既存のリスナーを除去するため新しいボタンに置換
     const fresh = btn.cloneNode(true);
     btn.parentNode.replaceChild(fresh, btn);
-    const freshCountEl = fresh.querySelector('.like-count');
+    const countEl = fresh.querySelector('.like-count');
+    const iconEl = fresh.querySelector('.like-icon');
 
-    // 一旦カウントは前回値（あれば）で即時表示し、その後 Supabase の値で上書き
-    freshCountEl.textContent = '…';
-    fresh.classList.toggle('is-liked', alreadyLiked);
-    fresh.querySelector('.like-icon').textContent = alreadyLiked ? '♥' : '♡';
+    // 表示反映ヘルパ
+    function applyState(isLiked, count) {
+        fresh.classList.toggle('is-liked', isLiked);
+        fresh.setAttribute('aria-pressed', isLiked ? 'true' : 'false');
+        iconEl.textContent = isLiked ? '♥' : '♡';
+        countEl.textContent = count;
+    }
 
-    const likes = await fetchLikesMap();
-    let count = Number(likes[cardKey] || 0);
-    freshCountEl.textContent = count;
+    // 初期状態
+    let liked = getLocalLiked().has(cardKey);
+    countEl.textContent = '…';
+    fresh.classList.toggle('is-liked', liked);
+    iconEl.textContent = liked ? '♥' : '♡';
+
+    // Supabase から最新カウントを取得
+    const likesMap = await fetchLikesMap();
+    let count = Number(likesMap[cardKey] || 0);
+    applyState(liked, count);
 
     fresh.addEventListener('click', async () => {
-        if (getLocalLiked().has(cardKey)) return; // 多重押下防止
         if (fresh.disabled) return;
         fresh.disabled = true;
 
+        const goingToLike = !liked; // クリック後の方向：true=Like、false=UnLike
+        const delta = goingToLike ? 1 : -1;
+
         // 楽観的 UI 更新
-        count += 1;
-        freshCountEl.textContent = count;
-        fresh.classList.add('is-liked', 'is-pulsing');
-        fresh.querySelector('.like-icon').textContent = '♥';
-        setTimeout(() => fresh.classList.remove('is-pulsing'), 500);
+        liked = goingToLike;
+        count = Math.max(0, count + delta);
+        applyState(liked, count);
+        if (goingToLike) {
+            fresh.classList.add('is-pulsing');
+            setTimeout(() => fresh.classList.remove('is-pulsing'), 500);
+        }
 
         try {
-            // 最新値を取得してから増分（粗い同時押下対策）
+            // 最新値を取得してから増減（粗い同時操作対策）
             const current = await fetchLikesMap();
-            const next = { ...current, [cardKey]: Number(current[cardKey] || 0) + 1 };
-            await persistLikesMap(next);
-            markLocalLiked(cardKey);
-            freshCountEl.textContent = next[cardKey];
-            count = next[cardKey];
+            const nextCount = Math.max(0, Number(current[cardKey] || 0) + delta);
+            const nextMap = { ...current, [cardKey]: nextCount };
+            await persistLikesMap(nextMap);
+
+            if (goingToLike) markLocalLiked(cardKey);
+            else unmarkLocalLiked(cardKey);
+
+            // サーバーの最新値で上書き表示
+            count = nextCount;
+            applyState(liked, count);
         } catch (e) {
             // ロールバック
-            count -= 1;
-            freshCountEl.textContent = count;
-            fresh.classList.remove('is-liked');
-            fresh.querySelector('.like-icon').textContent = '♡';
-            fresh.disabled = false;
+            liked = !goingToLike;
+            count = Math.max(0, count - delta);
+            applyState(liked, count);
             alert('LIKEの保存に失敗しました。少し時間をおいて再試行してください。');
+        } finally {
+            fresh.disabled = false;
         }
     });
 }

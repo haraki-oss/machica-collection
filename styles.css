@@ -890,27 +890,23 @@ button {
 
 .modal-badge {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    bottom: auto;
-    /* 上書き */
-    padding: 6px 14px;
-    border-radius: 100px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    backdrop-filter: blur(8px);
-    z-index: 5;
-}
-
-.modal-badge {
-    position: absolute;
+    top: auto;
     bottom: 16px;
     left: 16px;
+    right: auto;
+    width: auto;
+    height: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     padding: 6px 14px;
     border-radius: 100px;
     font-size: 0.8rem;
     font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
     backdrop-filter: blur(8px);
+    z-index: 5;
 }
 
 .modal-body {
@@ -925,6 +921,7 @@ button {
     gap: 10px;
     margin-bottom: 12px;
     align-items: center;
+    justify-content: space-between;
 }
 
 .modal-area {
@@ -1030,6 +1027,23 @@ button {
     cursor: pointer;
     transition: all var(--transition);
     flex: 0 0 auto;
+}
+
+/* コンパクト版（モーダル冒頭の都道府県行に並べる用） */
+.like-btn.like-btn--compact {
+    padding: 6px 12px;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    gap: 6px;
+}
+
+.like-btn.like-btn--compact .like-icon {
+    font-size: 1rem;
+}
+
+.like-btn.like-btn--compact .like-count {
+    padding: 0 8px;
+    font-size: 0.78rem;
 }
 
 .like-btn:hover:not(.is-liked) {
