@@ -630,6 +630,33 @@ button {
     flex-shrink: 0;
 }
 
+/* エリアバッジ（カード表面の左上）*/
+.card-area-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px 5px 8px;
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--amanek-black);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 2px 6px rgba(30, 27, 25, 0.12);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.card-area-badge-pin {
+    font-size: 0.78rem;
+    line-height: 1;
+}
+
 .card-collect-btn {
     position: absolute;
     top: 12px;

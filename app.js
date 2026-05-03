@@ -565,17 +565,10 @@ function renderCards(cards) {
 }
 
 function createCardHTML(card, index) {
-    const cat = getCategoryById(card.category_id);
-
     // 多言語対応
     const lang = state.lang;
     const title = (lang === 'en' && card.title_en) ? card.title_en : card.title;
     const areaName = (lang === 'en') ? getAreaName(card.area, 'en') : card.area;
-
-    const catName = cat ? ((lang === 'en' && cat.name_en) ? cat.name_en : cat.name) : '';
-
-    const badgeStyle = cat ? `background:${cat.bg}; color:${cat.color};` : '';
-    const iconHtml = cat ? getCategoryIcon(cat) : '';
 
     // 裏面画像
     const backUrl = card.image_url_back || card.back_image_url;
@@ -587,7 +580,7 @@ function createCardHTML(card, index) {
     return `
     <article class="card-item" data-id="${card.id}" style="animation-delay:${index * 0.05}s" role="button" tabindex="0" aria-label="${title}">
       <div class="card-image-wrap ${hasBack ? 'has-back' : ''}">
-        
+
         <!-- 表面 -->
         <div class="card-front">
           <img
@@ -597,11 +590,10 @@ function createCardHTML(card, index) {
             loading="lazy"
             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'600\' height=\'900\' viewBox=\'0 0 600 900\'%3E%3Crect fill=\'%23F1F5F9\' width=\'600\' height=\'900\'/%3E%3Ctext fill=\'%2394A3B8\' font-size=\'24\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\'%3E📷%3C/text%3E%3C/svg%3E'"
           />
-          ${cat ? `<span class="card-category-badge" style="${badgeStyle}">${iconHtml}<span>${catName}</span></span>` : ''}
-          
+          ${areaName ? `<span class="card-area-badge"><span class="card-area-badge-pin">📍</span><span>${areaName}</span></span>` : ''}
+
           <!-- スポット名オーバーレイ -->
           <div class="card-name-overlay">
-            <p class="card-overlay-area">${areaName}</p>
             <h3 class="card-overlay-title">${title}</h3>
           </div>
         </div>
