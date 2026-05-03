@@ -153,6 +153,10 @@
                     <span class="address-icon">📍</span>
                     <span id="modalAddress"></span>
                 </div>
+
+                <!-- 店舗情報（OSM 由来 / 手動入力。データが無ければ非表示） -->
+                <div class="modal-business-info" id="modalBusinessInfo" style="display:none;"></div>
+
                 <!-- Google Mapsプレビュー -->
                 <div class="map-container" id="mapContainer">
                     <div class="map-placeholder" id="mapPlaceholder">
@@ -162,8 +166,6 @@
                     <div id="googleMap" style="width:100%;height:100%;"></div>
                 </div>
 
-                <!-- 店舗情報（Google Places API 連携・APIキー設定時のみ表示）-->
-                <div class="modal-business-info" id="modalBusinessInfo" style="display:none;"></div>
                 <div class="modal-actions">
                     <a href="#" class="btn-primary" id="routeBtn" target="_blank" rel="noopener">
                         <span>📍</span> Google Mapsで見る
