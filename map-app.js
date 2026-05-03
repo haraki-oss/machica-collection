@@ -84,7 +84,12 @@ async function loadCardsOnMap() {
     // モックデータから削除済みを除外
     const mocks = (typeof CARDS_DATA !== 'undefined' ? CARDS_DATA : [])
         .filter(c => !deletedIds.includes(c.id));
-    const cards = [...customCards, ...mocks];
+    // 同じ id のカードがあればカスタム（Supabase 側）を優先（モックの古いマーカーが残らないように）
+    const customIds = new Set(customCards.map(c => c.id));
+    const cards = [
+        ...customCards,
+        ...mocks.filter(m => !customIds.has(m.id)),
+    ];
 
     // カテゴリ参照
     const catMap = await getCategoryMapById();

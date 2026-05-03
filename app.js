@@ -51,8 +51,14 @@ async function initCards() {
     // モックデータから削除済みを除外
     const mocks = CARDS_DATA.filter(c => !deletedIds.includes(c.id));
 
-    // 統合（カスタム優先、降順）
-    state.cards = [...customCards, ...mocks].map(c => ({ ...c }));
+    // 統合：同じ id のカードがあればカスタム（Supabase 側）を優先する。
+    // これがないと、admin で編集したカードのモック版とカスタム版が両方表示され、
+    // 訪問者が古い（店舗情報なしの）モック版を開いてしまうことがある。
+    const customIds = new Set(customCards.map(c => c.id));
+    state.cards = [
+        ...customCards,
+        ...mocks.filter(m => !customIds.has(m.id)),
+    ].map(c => ({ ...c }));
 
     // 管理画面で設定された並び順を優先、未指定はID降順で末尾
     const indexMap = new Map(orderIds.map((id, i) => [String(id), i]));
