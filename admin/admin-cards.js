@@ -23,6 +23,7 @@ async function initCards() {
   const customCards = await machicaDB.getAll('cards');
   const settings = await machicaDB.getAll('settings');
   const deletedIds = settings.find(s => s.id === 'deleted_card_ids')?.value || [];
+  const orderIds = settings.find(s => s.id === 'card_order')?.value || [];
 
   // モックデータから削除済みを除外
   const mocks = CARDS_DATA.filter(c => !deletedIds.includes(c.id));
@@ -30,8 +31,28 @@ async function initCards() {
   // 統合
   allCards = [...customCards, ...mocks];
 
-  // ID降順
-  allCards.sort((a, b) => b.id - a.id);
+  // ユーザーが定義した並び順を優先、未指定はID降順で末尾
+  allCards = sortByCardOrder(allCards, orderIds);
+}
+
+/**
+ * card_order（IDの並び順配列）を使ってカードをソート。
+ * 配列に含まれないカードは ID 降順で末尾に並べる。
+ */
+function sortByCardOrder(cards, orderIds) {
+  const indexMap = new Map(orderIds.map((id, i) => [String(id), i]));
+  return [...cards].sort((a, b) => {
+    const aIdx = indexMap.get(String(a.id));
+    const bIdx = indexMap.get(String(b.id));
+    if (aIdx !== undefined && bIdx !== undefined) return aIdx - bIdx;
+    if (aIdx !== undefined) return -1;
+    if (bIdx !== undefined) return 1;
+    return b.id - a.id;
+  });
+}
+
+async function persistCardOrder(orderedIds) {
+  await machicaDB.put('settings', { id: 'card_order', value: orderedIds });
 }
 
 function renderCardTable() {
@@ -52,7 +73,8 @@ function renderCardTable() {
     const address = card.address || '-';
 
     return `
-            <tr>
+            <tr draggable="true" data-id="${card.id}">
+                <td class="drag-handle" title="ドラッグして並び替え">⋮⋮</td>
                 <td>
                     <div class="card-thumb">
                         <img src="${card.image_url}" alt="" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'36\'%3E%3Crect fill=\'%23F1F5F9\' width=\'48\' height=\'36\'/%3E%3Ctext fill=\'%2394A3B8\' font-size=\'14\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\'%3E📷%3C/text%3E%3C/svg%3E'">
@@ -78,6 +100,79 @@ function renderCardTable() {
             </tr>
         `;
   }).join('');
+
+  setupRowDragAndDrop(tbody);
+}
+
+/**
+ * テーブル行のドラッグ&ドロップ並び替え。
+ * - 行に draggable=true を付与
+ * - dragover で挿入位置を判定し DOM を即時更新（プレビュー）
+ * - drop 時に最終順序を Supabase の card_order に保存
+ */
+function setupRowDragAndDrop(tbody) {
+  let draggedRow = null;
+
+  tbody.querySelectorAll('tr[draggable="true"]').forEach(row => {
+    row.addEventListener('dragstart', (e) => {
+      draggedRow = row;
+      row.classList.add('row-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      // Firefox はデータをセットしないと drag が始まらない
+      try { e.dataTransfer.setData('text/plain', row.dataset.id); } catch (_) { }
+    });
+
+    row.addEventListener('dragend', () => {
+      row.classList.remove('row-dragging');
+      tbody.querySelectorAll('tr.row-drop-above, tr.row-drop-below')
+        .forEach(r => r.classList.remove('row-drop-above', 'row-drop-below'));
+      draggedRow = null;
+    });
+
+    row.addEventListener('dragover', (e) => {
+      if (!draggedRow || draggedRow === row) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+
+      const rect = row.getBoundingClientRect();
+      const isAbove = (e.clientY - rect.top) < (rect.height / 2);
+
+      // 視覚的フィードバック（直接 DOM 移動はせずクラスでガイド線）
+      tbody.querySelectorAll('tr.row-drop-above, tr.row-drop-below')
+        .forEach(r => r.classList.remove('row-drop-above', 'row-drop-below'));
+      row.classList.add(isAbove ? 'row-drop-above' : 'row-drop-below');
+    });
+
+    row.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      if (!draggedRow || draggedRow === row) return;
+
+      const rect = row.getBoundingClientRect();
+      const isAbove = (e.clientY - rect.top) < (rect.height / 2);
+
+      if (isAbove) {
+        tbody.insertBefore(draggedRow, row);
+      } else {
+        tbody.insertBefore(draggedRow, row.nextSibling);
+      }
+
+      const orderedIds = [...tbody.querySelectorAll('tr[draggable="true"]')]
+        .map(r => parseInt(r.dataset.id, 10))
+        .filter(n => !isNaN(n));
+
+      // メモリ上の allCards も同じ順序に並べ替え
+      const orderMap = new Map(orderedIds.map((id, i) => [id, i]));
+      allCards.sort((a, b) => (orderMap.get(a.id) ?? Infinity) - (orderMap.get(b.id) ?? Infinity));
+
+      try {
+        await persistCardOrder(orderedIds);
+        showToast('順序を保存しました');
+      } catch (err) {
+        console.error('Failed to persist card order:', err);
+        showToast('順序の保存に失敗しました');
+      }
+    });
+  });
 }
 
 function bindEvents() {

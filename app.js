@@ -46,13 +46,24 @@ async function initCards() {
     const customCards = await machicaDB.getAll('cards');
     const settings = await machicaDB.getAll('settings');
     const deletedIds = settings.find(s => s.id === 'deleted_card_ids')?.value || [];
+    const orderIds = settings.find(s => s.id === 'card_order')?.value || [];
 
     // モックデータから削除済みを除外
     const mocks = CARDS_DATA.filter(c => !deletedIds.includes(c.id));
 
     // 統合（カスタム優先、降順）
     state.cards = [...customCards, ...mocks].map(c => ({ ...c }));
-    state.cards.sort((a, b) => b.id - a.id);
+
+    // 管理画面で設定された並び順を優先、未指定はID降順で末尾
+    const indexMap = new Map(orderIds.map((id, i) => [String(id), i]));
+    state.cards.sort((a, b) => {
+        const aIdx = indexMap.get(String(a.id));
+        const bIdx = indexMap.get(String(b.id));
+        if (aIdx !== undefined && bIdx !== undefined) return aIdx - bIdx;
+        if (aIdx !== undefined) return -1;
+        if (bIdx !== undefined) return 1;
+        return b.id - a.id;
+    });
 
     state.filtered = [...state.cards];
     renderCards(state.filtered);
