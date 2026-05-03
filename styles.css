@@ -1049,6 +1049,118 @@ button {
     font-size: 2rem;
 }
 
+/* ── モーダル：店舗情報（Google Places） ──────────── */
+.modal-business-info {
+    margin-top: 16px;
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-soft);
+}
+
+.business-info-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin: 0 0 12px;
+}
+
+.business-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.bi-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    word-break: break-all;
+}
+
+a.bi-row:hover {
+    color: var(--primary);
+}
+
+.bi-icon {
+    font-size: 1.05rem;
+    flex-shrink: 0;
+    width: 22px;
+    text-align: center;
+}
+
+.bi-summary-text {
+    flex: 1;
+    min-width: 0;
+}
+
+/* 営業時間 折りたたみ */
+.bi-hours {
+    cursor: pointer;
+}
+
+.bi-hours summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0;
+}
+
+.bi-hours summary::-webkit-details-marker {
+    display: none;
+}
+
+.bi-hours summary::after {
+    content: '▾';
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    transition: transform 0.18s;
+}
+
+.bi-hours[open] summary::after {
+    transform: rotate(180deg);
+}
+
+.bi-week {
+    margin: 10px 0 0 32px;
+    padding: 0;
+    list-style: none;
+}
+
+.bi-week li {
+    padding: 3px 0;
+    font-size: 0.83rem;
+    color: var(--text-secondary);
+}
+
+.bi-week li.is-today {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.business-info-loading {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    padding: 4px 0;
+    margin: 0;
+}
+
+.business-info-source {
+    margin: 14px 0 0;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    text-align: right;
+    letter-spacing: 0.04em;
+}
+
 /* モーダルアクションボタン */
 .modal-actions {
     display: flex;
