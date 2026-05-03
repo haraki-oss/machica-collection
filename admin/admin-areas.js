@@ -117,7 +117,7 @@ function confirmDeleteArea(id, name) {
     const text = document.getElementById('deleteConfirmText');
     if (modal && text) {
         text.textContent = `エリア「${name}」を削除します。よろしいですか？`;
-        modal.style.display = 'flex';
+        modal.classList.add('active');
     }
 }
 
@@ -125,7 +125,7 @@ function closeDeleteModal() {
     deleteTargetId = null;
     const modal = document.getElementById('deleteModal');
     if (modal) {
-        modal.style.display = 'none';
+        modal.classList.remove('active');
     }
 }
 
@@ -163,13 +163,13 @@ function startEditArea(id) {
     document.getElementById('editAreaNameEn').value = area.name_en || '';
 
     const modal = document.getElementById('editModal');
-    if (modal) modal.style.display = 'flex';
+    if (modal) modal.classList.add('active');
 }
 
 function closeEditModal() {
     editTargetId = null;
     const modal = document.getElementById('editModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) modal.classList.remove('active');
 }
 
 async function saveAreaEdit() {

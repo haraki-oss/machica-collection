@@ -129,6 +129,7 @@ function bindEvents() {
     // エリアフィルター
     document.getElementById('areaSelect')?.addEventListener('change', (e) => {
         state.area = e.target.value;
+        syncAreaToUrl();
         applyFilters();
     });
 
@@ -381,18 +382,23 @@ function updateLanguageUI() {
 let _areaRenderGen = 0;
 let _genreRenderGen = 0;
 
+// エリア URL パラメータ用キャッシュ
+let _cachedAreas = [];
+let _areaUrlApplied = false;
+
 async function populateAreaFilter() {
     const select = document.getElementById('areaSelect');
     if (!select) return;
 
     const myGen = ++_areaRenderGen;
-    const currentVal = state.area;
     const firstOpt = select.options[0];
 
     const areas = await getAllAreasAsync();
 
     // 後発の呼び出しが走り始めていたら自分の結果は捨てる
     if (myGen !== _areaRenderGen) return;
+
+    _cachedAreas = areas;
 
     select.innerHTML = '';
     select.appendChild(firstOpt);
@@ -403,7 +409,60 @@ async function populateAreaFilter() {
         opt.textContent = state.lang === 'en' ? (area.name_en || area.name) : area.name;
         select.appendChild(opt);
     });
-    select.value = currentVal;
+
+    // 初回のみ URL の ?area= パラメータを反映
+    if (!_areaUrlApplied) {
+        applyAreaFromUrl();
+        _areaUrlApplied = true;
+    }
+    select.value = state.area;
+    updateDocumentTitle();
+}
+
+// URL の ?area= を読み取って state.area に適用（初期ロード用）
+function applyAreaFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('area');
+    if (!raw) return;
+    const v = decodeURIComponent(raw).toLowerCase();
+    const match = _cachedAreas.find(a =>
+        (a.name_en && a.name_en.toLowerCase() === v) ||
+        (a.name && a.name.toLowerCase() === v)
+    );
+    if (match) {
+        state.area = match.name;
+    }
+}
+
+// state.area を URL ?area= に同期する（共有用）
+function syncAreaToUrl() {
+    const params = new URLSearchParams(window.location.search);
+    if (!state.area || state.area === 'all') {
+        params.delete('area');
+    } else {
+        const area = _cachedAreas.find(a => a.name === state.area);
+        params.set('area', area?.name_en || state.area);
+    }
+    const qs = params.toString();
+    const newUrl = window.location.pathname + (qs ? '?' + qs : '') + window.location.hash;
+    window.history.replaceState({}, '', newUrl);
+    updateDocumentTitle();
+}
+
+// 選択中のエリアに合わせて document.title を更新
+function updateDocumentTitle() {
+    const baseTitle = state.lang === 'en'
+        ? 'AMANEK machi FAVE | Local Spot Collection'
+        : 'AMANEK machi FAVE | 地域を旅するコレクション';
+    if (!state.area || state.area === 'all') {
+        document.title = baseTitle;
+        return;
+    }
+    const area = _cachedAreas.find(a => a.name === state.area);
+    const label = state.lang === 'en'
+        ? (area?.name_en || state.area)
+        : (area?.name || state.area);
+    document.title = `${label} | AMANEK machi FAVE`;
 }
 
 async function renderGenreButtons() {
@@ -532,6 +591,7 @@ function resetFilters() {
     document.querySelectorAll('.genre-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.genre === 'all');
     });
+    syncAreaToUrl();
     applyFilters();
 }
 
