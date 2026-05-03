@@ -130,23 +130,11 @@ async function loadCardsOnMap() {
 
         const marker = L.marker([lat, lng], { icon, riseOnHover: true }).addTo(map);
 
-        // ポップアップ
-        const fallbackImg =
-            "data:image/svg+xml;charset=UTF-8," +
-            encodeURIComponent(
-                "<svg xmlns='http://www.w3.org/2000/svg' width='240' height='130'>" +
-                "<rect fill='#F4F4F2' width='240' height='130'/>" +
-                "<text fill='#A1A3A0' font-size='28' x='50%' y='50%' text-anchor='middle' dy='.3em'>📷</text>" +
-                "</svg>"
-            );
-
+        // ポップアップ（画像なしのコンパクト版）
         const safeArea = card.area || 'AREA';
         const safeTitle = (card.title || '').replace(/"/g, '&quot;');
         const popupHtml = `
             <a class="popup-card" href="index.html?card=${card.id}">
-                <img class="popup-img" src="${card.image_url || fallbackImg}"
-                     alt="${safeTitle}"
-                     onerror="this.src='${fallbackImg}'" />
                 <div class="popup-info">
                     <p class="popup-area">${safeArea}</p>
                     <h3 class="popup-title">${safeTitle}</h3>
@@ -156,6 +144,29 @@ async function loadCardsOnMap() {
         `;
 
         marker.bindPopup(popupHtml, { closeButton: true, autoPan: true, maxWidth: 260 });
+
+        // ── ホバーでポップアップを開く ─────────────
+        // マーカー or ポップアップ自身からカーソルが離れた時のみ閉じるよう、
+        // 短いディレイを入れて「マーカーからポップアップへの移動」を許容する
+        let closeTimer = null;
+        marker.on('mouseover', () => {
+            if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+            marker.openPopup();
+        });
+        marker.on('mouseout', () => {
+            closeTimer = setTimeout(() => marker.closePopup(), 180);
+        });
+        marker.on('popupopen', (e) => {
+            const el = e.popup.getElement();
+            if (!el) return;
+            el.addEventListener('mouseenter', () => {
+                if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+            });
+            el.addEventListener('mouseleave', () => {
+                closeTimer = setTimeout(() => marker.closePopup(), 180);
+            });
+        });
+
         bounds.extend([lat, lng]);
         markerCount++;
     });
