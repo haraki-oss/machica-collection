@@ -319,6 +319,30 @@
                     </div>
                 </div>
 
+                <!-- 店舗情報（自動取得 + 手動入力） -->
+                <div class="form-card">
+                    <p class="form-section-title">📞 店舗情報</p>
+                    <p class="form-hint" style="margin-bottom:14px;font-size:0.8rem;color:var(--text-muted);">
+                        座標自動取得時に OpenStreetMap から営業時間・電話・ウェブサイトを引っ張ってきます。
+                        取得できなかった場合や情報が古い場合は、ここで直接編集できます。
+                    </p>
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label class="form-label" for="cardOpeningHours">営業時間</label>
+                            <textarea id="cardOpeningHours" class="form-control" rows="2"
+                                placeholder="例：月-金 09:00-17:00; 土 10:00-15:00"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cardPhone">電話番号</label>
+                            <input type="tel" id="cardPhone" class="form-control" placeholder="例：03-1234-5678" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cardWebsite">ウェブサイト</label>
+                            <input type="url" id="cardWebsite" class="form-control" placeholder="https://example.com" />
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 送信 -->
                 <div class="form-card">
                     <div id="formMessage"

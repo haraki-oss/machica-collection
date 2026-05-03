@@ -899,8 +899,7 @@ function loadGoogleMapsAPI() {
         return;
     }
     const script = document.createElement('script');
-    // places ライブラリを併せて読み込む（営業時間・電話・HP取得用）
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=onGoogleMapsLoaded`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=onGoogleMapsLoaded`;
     script.async = true;
     script.defer = true;
     document.head.appendChild(script);
@@ -909,140 +908,56 @@ function loadGoogleMapsAPI() {
 // Google Maps SDK ロード完了コールバック（グローバル）
 window.onGoogleMapsLoaded = function () {
     state.mapsLoaded = true;
-    // モーダルが既に開いていて店舗情報が pending なら再度試行
-    if (state.currentCard) loadPlaceDetails(state.currentCard);
 };
 
-// ── Google Places：店舗情報の取得・表示 ────────────────
-// API リファレンス：https://developers.google.com/maps/documentation/javascript/places
-// コスト最適化のため localStorage で 6 時間キャッシュ
-const PLACE_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
-
-function getCachedPlaceData(cardId) {
-    try {
-        const raw = localStorage.getItem(`place_cache_${cardId}`);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        if (!parsed || (Date.now() - parsed.fetched_at) > PLACE_CACHE_TTL_MS) return null;
-        return parsed.data;
-    } catch (e) { return null; }
-}
-
-function setCachedPlaceData(cardId, data) {
-    try {
-        localStorage.setItem(`place_cache_${cardId}`,
-            JSON.stringify({ data, fetched_at: Date.now() }));
-    } catch (e) { /* localStorage 容量不足等は無視 */ }
-}
-
-async function loadPlaceDetails(card) {
+// ── 店舗情報の表示（カードに手動入力された情報をそのまま描画） ──
+// 取得元は admin での「自動取得（OSM 由来）」または手動入力。
+// 表示時には API を呼ばないので追加のコストはかからない。
+function loadPlaceDetails(card) {
     const container = document.getElementById('modalBusinessInfo');
     if (!container) return;
 
-    // 一旦リセット
     container.style.display = 'none';
     container.innerHTML = '';
 
-    // API キーがない場合はそもそも何もしない（グレースフル降格）
-    if (!GOOGLE_MAPS_API_KEY) return;
+    const data = {
+        opening_hours: card.opening_hours || null,
+        phone: card.phone || null,
+        website: card.website || null,
+    };
 
-    // 6 時間以内のキャッシュがあればそれを使う
-    const cached = getCachedPlaceData(card.id);
-    if (cached) {
-        renderBusinessInfo(cached, container);
-        return;
-    }
+    // 何も無ければパネル自体を出さない
+    if (!data.opening_hours && !data.phone && !data.website) return;
 
-    // SDK がまだロード中なら、コールバック側から再呼び出しされる
-    if (!state.mapsLoaded || !window.google?.maps?.places) return;
+    renderBusinessInfo(data, container);
+}
 
-    const lat = parseFloat(card.lat || card.latitude);
-    const lng = parseFloat(card.lng || card.longitude);
-    if (!lat || !lng) return;
-
-    // ローディング表示
-    container.style.display = 'block';
-    container.innerHTML = '<p class="business-info-loading">店舗情報を取得しています…</p>';
-
-    // PlacesService にはマップか div を渡す必要がある
-    const host = state.map || document.createElement('div');
-    const service = new google.maps.places.PlacesService(host);
-
-    // STEP 1: タイトル＋住所＋座標バイアスで place_id を検索
-    service.findPlaceFromQuery({
-        query: [card.title, card.address].filter(Boolean).join(' '),
-        fields: ['place_id', 'name'],
-        locationBias: new google.maps.Circle({
-            center: { lat, lng },
-            radius: 250,
-        }),
-    }, (results, status) => {
-        // 自分が表示対象のカードでなければ捨てる（モーダルが切替わった等）
-        if (!state.currentCard || state.currentCard.id !== card.id) return;
-
-        if (status !== google.maps.places.PlacesServiceStatus.OK || !results?.[0]?.place_id) {
-            container.style.display = 'none';
-            container.innerHTML = '';
-            return;
-        }
-
-        // STEP 2: 詳細を取得
-        service.getDetails({
-            placeId: results[0].place_id,
-            fields: [
-                'opening_hours',
-                'formatted_phone_number',
-                'website',
-                'rating',
-                'user_ratings_total',
-                'url',
-            ],
-        }, (place, detailsStatus) => {
-            if (!state.currentCard || state.currentCard.id !== card.id) return;
-
-            if (detailsStatus !== google.maps.places.PlacesServiceStatus.OK || !place) {
-                container.style.display = 'none';
-                container.innerHTML = '';
-                return;
-            }
-
-            // PlaceResult から必要な値だけシリアライズ可能な形で抽出
-            const data = {
-                opening_hours_weekday: place.opening_hours?.weekday_text || null,
-                phone: place.formatted_phone_number || null,
-                website: place.website || null,
-                rating: place.rating ?? null,
-                user_ratings_total: place.user_ratings_total ?? null,
-                google_url: place.url || null,
-            };
-            setCachedPlaceData(card.id, data);
-            renderBusinessInfo(data, container);
-        });
+// 営業時間文字列を日本語向けに軽く整形（OSM 形式 "Mo-Fr 09:00-17:00" を "月-金 09:00-17:00" に）
+function humanizeOpeningHours(raw) {
+    if (!raw) return '';
+    const dayMap = { Mo: '月', Tu: '火', We: '水', Th: '木', Fr: '金', Sa: '土', Su: '日' };
+    let s = raw;
+    Object.keys(dayMap).forEach(k => {
+        s = s.replace(new RegExp(k, 'g'), dayMap[k]);
     });
+    return s;
 }
 
 function renderBusinessInfo(data, container) {
     const lang = state.lang;
     const parts = [];
 
-    // 営業時間（今日強調 + 折りたたみで全曜日）
-    if (Array.isArray(data.opening_hours_weekday) && data.opening_hours_weekday.length) {
-        // weekday_text は地域フォーマット依存。Google JS API は Locale=ja のとき日本語、デフォルト en。
-        // 月曜=0 になっている（Google 仕様）
-        const todayIdx = (new Date().getDay() + 6) % 7;
-        const todayLine = data.opening_hours_weekday[todayIdx] || '';
+    // 営業時間
+    if (data.opening_hours) {
+        const display = lang === 'en' ? data.opening_hours : humanizeOpeningHours(data.opening_hours);
+        // 改行を <br> に変換、HTML 属性用にエスケープ
+        const safe = display.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/\n/g, '<br>');
         parts.push(`
-            <details class="bi-row bi-hours">
-                <summary>
-                    <span class="bi-icon">⏰</span>
-                    <span class="bi-summary-text">${todayLine}</span>
-                </summary>
-                <ul class="bi-week">
-                    ${data.opening_hours_weekday.map((line, i) =>
-                        `<li${i === todayIdx ? ' class="is-today"' : ''}>${line}</li>`
-                    ).join('')}
-                </ul>
-            </details>
+            <div class="bi-row bi-hours-static">
+                <span class="bi-icon">⏰</span>
+                <span class="bi-summary-text">${safe}</span>
+            </div>
         `);
     }
 
@@ -1069,34 +984,18 @@ function renderBusinessInfo(data, container) {
         `);
     }
 
-    // 評価
-    if (data.rating != null) {
-        const reviews = data.user_ratings_total ?? 0;
-        const reviewLabel = lang === 'en' ? `${reviews} reviews` : `${reviews}件のレビュー`;
-        const href = data.google_url || '#';
-        parts.push(`
-            <a class="bi-row" href="${href}" target="_blank" rel="noopener noreferrer">
-                <span class="bi-icon">⭐</span>
-                <span>${data.rating} (${reviewLabel})</span>
-            </a>
-        `);
-    }
-
     if (parts.length === 0) {
         container.style.display = 'none';
-        container.innerHTML = '';
         return;
     }
 
     const titleText = lang === 'en' ? 'Business info' : '店舗情報';
-    const sourceText = lang === 'en' ? 'Source: Google Maps' : '出典: Google Maps';
     container.style.display = 'block';
     container.innerHTML = `
         <h4 class="business-info-title">${titleText}</h4>
         <div class="business-info-list">
             ${parts.join('')}
         </div>
-        <p class="business-info-source">${sourceText}</p>
     `;
 }
 

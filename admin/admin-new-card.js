@@ -252,6 +252,10 @@ function bindFormEvents() {
             address_en: document.getElementById('cardAddressEn').value.trim(),
             lat: parseFloat(document.getElementById('cardLat').value) || null,
             lng: parseFloat(document.getElementById('cardLng').value) || null,
+            // 店舗情報（OSM 自動取得＋手動編集）
+            opening_hours: document.getElementById('cardOpeningHours')?.value.trim() || null,
+            phone: document.getElementById('cardPhone')?.value.trim() || null,
+            website: document.getElementById('cardWebsite')?.value.trim() || null,
             image_url: imageBase64,
             image_url_back: imageBase64Back,
             gallery: galleryImages,
@@ -272,42 +276,121 @@ function bindFormEvents() {
 }
 
 async function fetchCoordinates(name, address) {
-    // 1. GSI API (国土地理院) は日本の住所に非常に強い
+    // Nominatim 経由で見つかった場合は extratags（店舗情報）も同時に返す
+    // 戻り値の shape: { lat, lng, extras?: { opening_hours, phone, website } }
+
+    // 1. GSI API (国土地理院) は日本の住所に非常に強い（座標のみ）
     if (address) {
         try {
-            // 建物名などを省いたクリーンな住所で検索
             const cleanAddress = address.replace(/[ 　].*$/, '').replace(/ビル.*$/, '');
             const res = await fetch(`https://msearch.gsi.go.jp/address-search/AddressSearch?q=${encodeURIComponent(cleanAddress)}`);
             const data = await res.json();
             if (data && data.length > 0) {
-                return { lat: data[0].geometry.coordinates[1], lng: data[0].geometry.coordinates[0] };
+                const result = { lat: data[0].geometry.coordinates[1], lng: data[0].geometry.coordinates[0] };
+                // 店舗情報は GSI には無いので、続けて Nominatim でビジネスタグを探す
+                const extras = await fetchBusinessTagsFromNominatim(name, address);
+                if (extras) result.extras = extras;
+                return result;
             }
-        } catch(e) { console.warn('GSI API failed', e); }
+        } catch (e) { console.warn('GSI API failed', e); }
     }
 
-    // 2. Nominatim (OSM) - 名称＋住所
+    // 2. Nominatim (OSM) - 名称＋住所（座標＋店舗情報）
     const query = [name, address].filter(Boolean).join(' ');
     if (query) {
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&extratags=1&addressdetails=1&q=${encodeURIComponent(query)}`);
             const data = await res.json();
             if (data && data.length > 0) {
-                return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+                return {
+                    lat: parseFloat(data[0].lat),
+                    lng: parseFloat(data[0].lon),
+                    extras: extractBusinessExtras(data[0]),
+                };
             }
-        } catch(e) { console.warn('Nominatim failed', e); }
+        } catch (e) { console.warn('Nominatim failed', e); }
     }
 
     // 3. Nominatim (OSM) - 名称のみ
     if (name) {
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name)}`);
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&extratags=1&q=${encodeURIComponent(name)}`);
             const data = await res.json();
             if (data && data.length > 0) {
-                return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+                return {
+                    lat: parseFloat(data[0].lat),
+                    lng: parseFloat(data[0].lon),
+                    extras: extractBusinessExtras(data[0]),
+                };
             }
-        } catch(e) { console.warn('Nominatim name failed', e); }
+        } catch (e) { console.warn('Nominatim name failed', e); }
     }
 
+    return null;
+}
+
+/**
+ * Nominatim の検索結果から営業時間・電話・ウェブサイトを抽出
+ * （extratags / 一部は extratags にもタグ にもある）
+ */
+function extractBusinessExtras(item) {
+    if (!item) return null;
+    const tags = item.extratags || {};
+    const out = {
+        opening_hours: tags.opening_hours || null,
+        phone: tags.phone || tags['contact:phone'] || null,
+        website: tags.website || tags['contact:website'] || tags.url || null,
+    };
+    // 全部 null なら null を返す
+    if (!out.opening_hours && !out.phone && !out.website) return null;
+    return out;
+}
+
+/**
+ * GSI で座標を取れた場合に補助的に Nominatim で店舗情報だけ追加取得する
+ */
+/**
+ * 店舗情報の自動取得結果をフォームに反映する。
+ * 既に値が入っている入力欄は尊重して上書きしない。
+ */
+function applyBusinessExtras(extras) {
+    if (!extras) return;
+    const map = [
+        ['cardOpeningHours', extras.opening_hours],
+        ['cardPhone', extras.phone],
+        ['cardWebsite', extras.website],
+    ];
+    map.forEach(([id, value]) => {
+        if (!value) return;
+        const el = document.getElementById(id);
+        if (!el) return;
+        // 既存値があればスキップ（admin が手入力した内容を尊重）
+        if (el.value && el.value.trim()) return;
+        el.value = value;
+        el.style.background = '#F0FFF4'; // 取得できたことの軽いハイライト
+        setTimeout(() => { el.style.background = ''; }, 1500);
+    });
+}
+
+function listExtraKeys(extras) {
+    if (!extras) return '';
+    const labels = [];
+    if (extras.opening_hours) labels.push('営業時間');
+    if (extras.phone) labels.push('電話');
+    if (extras.website) labels.push('HP');
+    return labels.join(' / ');
+}
+
+async function fetchBusinessTagsFromNominatim(name, address) {
+    const query = [name, address].filter(Boolean).join(' ');
+    if (!query) return null;
+    try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&extratags=1&q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        if (data && data.length > 0) {
+            return extractBusinessExtras(data[0]);
+        }
+    } catch (e) { console.warn('Nominatim extras failed', e); }
     return null;
 }
 
@@ -334,23 +417,29 @@ function bindAutoGeoEvent() {
             if (coords) {
                 document.getElementById('cardLat').value = coords.lat;
                 document.getElementById('cardLng').value = coords.lng;
-                
+
+                // 店舗情報（営業時間・電話・HP）が取れていたら入力欄にセット（既に手入力されている値は上書きしない）
+                applyBusinessExtras(coords.extras);
+
                 // Google Maps URLも自動生成してセット
                 const mapQuery = name ? `${name} ${address}` : address;
                 const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery.trim())}`;
-                
+
                 const urlInput = document.getElementById('gMapPaste');
                 if (urlInput) {
                     urlInput.value = mapUrl;
                     urlInput.style.borderColor = '#34D399';
-                    
+
                     const resultEl = document.getElementById('gMapParseResult');
                     if (resultEl) {
                         resultEl.style.display = 'block';
                         resultEl.style.background = '#F0FFF4';
                         resultEl.style.borderColor = '#BBF7D0';
                         resultEl.style.color = '#166534';
-                        resultEl.textContent = `✓ 名称と住所から座標とURLを自動取得しました！`;
+                        const extraNote = coords.extras
+                            ? ` 店舗情報も自動取得しました（${listExtraKeys(coords.extras)}）。`
+                            : ' 店舗情報は OSM に登録が無かったため、必要なら手動で入力してください。';
+                        resultEl.textContent = `✓ 座標とURLを取得しました！${extraNote}`;
                     }
                 }
             } else {
