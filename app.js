@@ -627,29 +627,30 @@ function openModal(cardId) {
 
     const cat = getCategoryById(card.category_id);
 
-    // メイン画像
-    const mainImg = document.getElementById('modalImage');
-    mainImg.src = card.image_url;
-    mainImg.alt = card.title;
-
     // 裏面ボタン表示制御
     const flipBtn = document.getElementById('flipBtn');
     const backUrl = card.image_url_back || card.back_image_url;
+    const mainImg = document.getElementById('modalImage');
     if (flipBtn) {
         flipBtn.style.display = backUrl ? 'flex' : 'none';
         mainImg.style.transform = 'scale(1)';
     }
+    mainImg.alt = card.title;
 
-    // ギャラリーサムネイル生成
+    // ギャラリー順序：内装・料理などの追加写真を先に、カードの表裏は最後に表示
+    const gallery = card.gallery || card.gallery_images || [];
+    const galleryArr = Array.isArray(gallery) ? gallery.filter(Boolean) : [];
+    const cardImages = [];
+    if (card.image_url) cardImages.push(card.image_url);
+    if (backUrl) cardImages.push(backUrl);
+    const images = [...galleryArr, ...cardImages];
+
+    // メイン画像は先頭の写真（ギャラリーがあればそれ、無ければカード表）
+    mainImg.src = images[0] || card.image_url || '';
+
     const thumbsContainer = document.getElementById('modalThumbs');
     if (thumbsContainer) {
         thumbsContainer.innerHTML = '';
-        const images = [card.image_url];
-        const gallery = card.gallery || card.gallery_images;
-        if (gallery && Array.isArray(gallery)) {
-            images.push(...gallery);
-        }
-
         if (images.length > 1) {
             thumbsContainer.style.display = 'flex';
             images.forEach((src, idx) => {
@@ -698,7 +699,8 @@ function openModal(cardId) {
                     if (state.currentCard && state.currentCard.id === card.id) {
                         document.getElementById('modalTitle').textContent = card.title_en;
                         document.getElementById('modalDescription').textContent = card.description_en;
-                        document.getElementById('modalAddress').textContent = card.address_en;
+                        // 住所は店舗情報パネル内に表示しているので再描画でリフレッシュ
+                        loadPlaceDetails(card);
                     }
                 }
             } catch (e) {
@@ -715,8 +717,8 @@ function openModal(cardId) {
 
     document.getElementById('modalTitle').textContent = title;
     document.getElementById('modalDescription').textContent = desc;
-    document.getElementById('modalAddress').textContent = address;
     document.getElementById('modalArea').textContent = areaName;
+    // 住所は店舗情報パネル内に表示するのでここでは設定しない
     // モーダルのジャンルバッジは廃止（旧 #modalCategory）。バッジは画像オーバーレイ側のみ。
     const modalCategoryEl = document.getElementById('modalCategory');
     if (modalCategoryEl) {
@@ -926,16 +928,35 @@ function loadPlaceDetails(card) {
     container.style.display = 'none';
     container.innerHTML = '';
 
+    const lang = state.lang;
+    const address = (lang === 'en' && card.address_en) ? card.address_en : card.address;
+
+    // パネルは住所＋店舗情報を統合表示。住所もしくは店舗情報のいずれかがあればパネルを出す。
     const data = {
+        address: address || null,
         opening_hours: card.opening_hours || null,
         phone: card.phone || null,
         website: card.website || null,
     };
 
-    // 何も無ければパネル自体を出さない
-    if (!data.opening_hours && !data.phone && !data.website) return;
+    // 住所も店舗情報も完全に空の場合のみパネルを隠す
+    if (!data.address && !data.opening_hours && !data.phone && !data.website) return;
 
     renderBusinessInfo(data, container);
+}
+
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function escapeAttr(s) {
+    return escapeHtml(s);
 }
 
 // 営業時間文字列を日本語向けに軽く整形（OSM 形式 "Mo-Fr 09:00-17:00" を "月-金 09:00-17:00" に）
@@ -952,17 +973,32 @@ function humanizeOpeningHours(raw) {
 function renderBusinessInfo(data, container) {
     const lang = state.lang;
     const parts = [];
+    const PLACEHOLDER = 'ー'; // 未登録時のフォールバック
+
+    // 住所（常時表示。無ければハイフン）
+    const addressText = data.address ? escapeHtml(data.address) : PLACEHOLDER;
+    parts.push(`
+        <div class="bi-row bi-address-row">
+            <span class="bi-icon">📍</span>
+            <span class="bi-summary-text">${addressText}</span>
+        </div>
+    `);
 
     // 営業時間
     if (data.opening_hours) {
         const display = lang === 'en' ? data.opening_hours : humanizeOpeningHours(data.opening_hours);
-        // 改行を <br> に変換、HTML 属性用にエスケープ
-        const safe = display.replace(/&/g, '&amp;').replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+        const safe = escapeHtml(display).replace(/\n/g, '<br>');
         parts.push(`
             <div class="bi-row bi-hours-static">
                 <span class="bi-icon">⏰</span>
                 <span class="bi-summary-text">${safe}</span>
+            </div>
+        `);
+    } else {
+        parts.push(`
+            <div class="bi-row bi-empty">
+                <span class="bi-icon">⏰</span>
+                <span class="bi-summary-text">${PLACEHOLDER}</span>
             </div>
         `);
     }
@@ -973,8 +1009,15 @@ function renderBusinessInfo(data, container) {
         parts.push(`
             <a class="bi-row" href="tel:${telHref}">
                 <span class="bi-icon">📞</span>
-                <span>${data.phone}</span>
+                <span>${escapeHtml(data.phone)}</span>
             </a>
+        `);
+    } else {
+        parts.push(`
+            <div class="bi-row bi-empty">
+                <span class="bi-icon">📞</span>
+                <span>${PLACEHOLDER}</span>
+            </div>
         `);
     }
 
@@ -983,19 +1026,21 @@ function renderBusinessInfo(data, container) {
         let display = data.website;
         try { display = new URL(data.website).hostname.replace(/^www\./, ''); } catch (e) { }
         parts.push(`
-            <a class="bi-row" href="${data.website}" target="_blank" rel="noopener noreferrer">
+            <a class="bi-row" href="${escapeAttr(data.website)}" target="_blank" rel="noopener noreferrer">
                 <span class="bi-icon">🌐</span>
-                <span>${display}</span>
+                <span>${escapeHtml(display)}</span>
             </a>
+        `);
+    } else {
+        parts.push(`
+            <div class="bi-row bi-empty">
+                <span class="bi-icon">🌐</span>
+                <span>${PLACEHOLDER}</span>
+            </div>
         `);
     }
 
-    if (parts.length === 0) {
-        container.style.display = 'none';
-        return;
-    }
-
-    const titleText = lang === 'en' ? 'Business info' : '店舗情報';
+    const titleText = lang === 'en' ? 'Spot info' : '店舗情報';
     container.style.display = 'block';
     container.innerHTML = `
         <h4 class="business-info-title">${titleText}</h4>

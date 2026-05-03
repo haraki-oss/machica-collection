@@ -1087,6 +1087,15 @@ a.bi-row:hover {
     color: var(--primary);
 }
 
+/* 未登録項目はやや薄めに（ハイフン表示） */
+.bi-row.bi-empty {
+    color: var(--text-muted);
+}
+
+.bi-row.bi-empty .bi-icon {
+    opacity: 0.55;
+}
+
 .bi-icon {
     font-size: 1.05rem;
     flex-shrink: 0;
@@ -1175,10 +1184,10 @@ a.bi-row:hover {
     gap: 6px;
     padding: 6px 12px;
     border-radius: 100px;
-    /* 初期状態でも軽くピンクのアクセント（発見性向上） */
-    border: 1.5px solid #F2C2CE;
-    background: #FFF5F8;
-    color: #C13257;
+    /* 通常はニュートラル。選択中（aria-pressed=true）にだけ色を付ける */
+    border: 1.5px solid var(--border);
+    background: var(--bg-white);
+    color: var(--text-secondary);
     font-family: inherit;
     font-size: 0.78rem;
     font-weight: 600;
@@ -1189,7 +1198,6 @@ a.bi-row:hover {
 
 .my-likes-toggle:hover:not([aria-pressed="true"]) {
     border-color: #E0245E;
-    background: #FDECEF;
     color: #E0245E;
 }
 
@@ -1220,9 +1228,9 @@ a.bi-row:hover {
     padding: 0 6px;
     font-size: 0.72rem;
     font-weight: 700;
-    background: #fff;
+    background: var(--bg-soft);
     border-radius: 100px;
-    color: #C13257;
+    color: var(--text-muted);
 }
 
 .my-likes-toggle[aria-pressed="true"] .my-likes-count {
