@@ -381,6 +381,30 @@ function listExtraKeys(extras) {
     return labels.join(' / ');
 }
 
+/**
+ * 店舗情報セクション（cardOpeningHours の上）に自動取得の結果を出す。
+ * 取得できた項目があれば緑、無かったら黄色（淡い）系で「手動入力してください」案内を出す。
+ */
+function showBusinessFetchResult(extras) {
+    const el = document.getElementById('bizFetchResult');
+    if (!el) return;
+
+    if (extras) {
+        const keys = listExtraKeys(extras);
+        el.style.display = 'block';
+        el.style.background = '#F0FFF4';
+        el.style.border = '1px solid #BBF7D0';
+        el.style.color = '#166534';
+        el.textContent = `✓ 店舗情報を自動取得しました（${keys}）`;
+    } else {
+        el.style.display = 'block';
+        el.style.background = '#FEF9E7';
+        el.style.border = '1px solid #FCE7A2';
+        el.style.color = '#7C5E10';
+        el.textContent = 'ℹ️ OpenStreetMap に店舗情報の登録が無かったため、必要に応じて手動で入力してください。';
+    }
+}
+
 async function fetchBusinessTagsFromNominatim(name, address) {
     const query = [name, address].filter(Boolean).join(' ');
     if (!query) return null;
@@ -430,18 +454,19 @@ function bindAutoGeoEvent() {
                     urlInput.value = mapUrl;
                     urlInput.style.borderColor = '#34D399';
 
+                    // 地図情報セクションの結果（座標 + URL のみ）
                     const resultEl = document.getElementById('gMapParseResult');
                     if (resultEl) {
                         resultEl.style.display = 'block';
                         resultEl.style.background = '#F0FFF4';
                         resultEl.style.borderColor = '#BBF7D0';
                         resultEl.style.color = '#166534';
-                        const extraNote = coords.extras
-                            ? ` 店舗情報も自動取得しました（${listExtraKeys(coords.extras)}）。`
-                            : ' 店舗情報は OSM に登録が無かったため、必要なら手動で入力してください。';
-                        resultEl.textContent = `✓ 座標とURLを取得しました！${extraNote}`;
+                        resultEl.textContent = '✓ 座標とURLを取得しました！';
                     }
                 }
+
+                // 店舗情報セクションに別途、自動取得結果を表示
+                showBusinessFetchResult(coords.extras);
             } else {
                 alert('座標が見つかりませんでした。名称や住所を少し変更して再度お試しください。');
             }
