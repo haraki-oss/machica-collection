@@ -4,6 +4,7 @@
 
 let allCards = [];
 let deleteTargetId = null;
+let sortState = { column: null, direction: 'asc' };
 
 document.addEventListener('DOMContentLoaded', async () => {
   // 1. 移行の実行
@@ -102,6 +103,7 @@ function renderCardTable() {
   }).join('');
 
   setupRowDragAndDrop(tbody);
+  updateSortIndicators();
 }
 
 /**
@@ -164,6 +166,10 @@ function setupRowDragAndDrop(tbody) {
       const orderMap = new Map(orderedIds.map((id, i) => [id, i]));
       allCards.sort((a, b) => (orderMap.get(a.id) ?? Infinity) - (orderMap.get(b.id) ?? Infinity));
 
+      // 手動ドラッグ後はカラムソート状態を解除
+      sortState = { column: null, direction: 'asc' };
+      updateSortIndicators();
+
       try {
         await persistCardOrder(orderedIds);
         showToast('順序を保存しました');
@@ -193,6 +199,94 @@ function bindEvents() {
     rows.forEach(row => {
       row.style.display = row.textContent.toLowerCase().includes(val) ? '' : 'none';
     });
+  });
+
+  // 列ヘッダークリックで並び替え
+  document.querySelectorAll('.admin-table th.sortable').forEach(th => {
+    th.addEventListener('click', () => handleSortClick(th.dataset.sortKey));
+  });
+}
+
+/**
+ * 列ヘッダー：1回目クリック=昇順、同じ列を再クリック=降順を交互。
+ * 別の列をクリックしたら昇順から再開。
+ */
+async function handleSortClick(column) {
+  if (!column) return;
+  if (sortState.column === column) {
+    sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortState.column = column;
+    sortState.direction = 'asc';
+  }
+  sortAllCardsBy(column, sortState.direction);
+  renderCardTable();
+
+  // 並び順を保存（公開サイトにも反映）
+  const orderedIds = allCards.map(c => c.id);
+  try {
+    await persistCardOrder(orderedIds);
+    showToast(`${labelOfSortKey(column)} を${sortState.direction === 'asc' ? '昇順' : '降順'}で並び替えました`);
+  } catch (err) {
+    console.error('Failed to persist sort order:', err);
+    showToast('順序の保存に失敗しました');
+  }
+}
+
+function labelOfSortKey(key) {
+  switch (key) {
+    case 'title': return 'スポット名';
+    case 'category': return 'ジャンル';
+    case 'area': return 'エリア';
+    case 'address': return '住所';
+    default: return key;
+  }
+}
+
+/**
+ * 指定列で allCards を昇順/降順に並べ替える（日本語対応の localeCompare 使用）
+ */
+function sortAllCardsBy(column, direction) {
+  const cats = getAllCategories();
+  const catMap = new Map(cats.map(c => [c.id, c]));
+
+  const keyFn = (card) => {
+    switch (column) {
+      case 'title': return (card.title || '').toLowerCase();
+      case 'category': {
+        const cat = catMap.get(card.category_id);
+        return (cat?.name || '').toLowerCase();
+      }
+      case 'area': return (card.area || '').toLowerCase();
+      case 'address': return (card.address || '').toLowerCase();
+      default: return '';
+    }
+  };
+
+  allCards.sort((a, b) => {
+    const av = keyFn(a);
+    const bv = keyFn(b);
+    const cmp = String(av).localeCompare(String(bv), 'ja');
+    return direction === 'desc' ? -cmp : cmp;
+  });
+}
+
+/**
+ * テーブルヘッダーのソートインジケーター（↕ ↑ ↓）を更新
+ */
+function updateSortIndicators() {
+  document.querySelectorAll('.admin-table th.sortable').forEach(th => {
+    const ind = th.querySelector('.sort-indicator');
+    if (!ind) return;
+    if (th.dataset.sortKey === sortState.column) {
+      ind.textContent = sortState.direction === 'asc' ? '↑' : '↓';
+      ind.classList.add('active');
+      th.classList.add('is-sorted');
+    } else {
+      ind.textContent = '↕';
+      ind.classList.remove('active');
+      th.classList.remove('is-sorted');
+    }
   });
 }
 

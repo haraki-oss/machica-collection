@@ -80,8 +80,7 @@
                     </div>
                 </div>
                 <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px;">
-                    💡 左の <span style="display:inline-block;color:var(--text-secondary);font-weight:700;">⋮⋮</span>
-                    をドラッグして並び順を変更できます（公開サイトの表示順にも反映されます）。
+                    💡 列ヘッダーをクリックで昇順／降順に並び替え、<span style="display:inline-block;color:var(--text-secondary);font-weight:700;">⋮⋮</span> をドラッグで個別調整できます（公開サイトの表示順にも反映されます）。
                 </p>
                 <div style="overflow-x:auto;">
                     <table class="admin-table" id="adminCardTable">
@@ -89,10 +88,18 @@
                             <tr>
                                 <th style="width:32px;"></th>
                                 <th style="width:60px;">写真</th>
-                                <th>スポット名</th>
-                                <th>ジャンル</th>
-                                <th>エリア</th>
-                                <th>住所</th>
+                                <th class="sortable" data-sort-key="title">
+                                    スポット名 <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-sort-key="category">
+                                    ジャンル <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-sort-key="area">
+                                    エリア <span class="sort-indicator">↕</span>
+                                </th>
+                                <th class="sortable" data-sort-key="address">
+                                    住所 <span class="sort-indicator">↕</span>
+                                </th>
                                 <th style="width:120px;">操作</th>
                             </tr>
                         </thead>
