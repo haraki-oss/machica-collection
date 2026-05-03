@@ -1017,8 +1017,7 @@ button {
 
 /* 地図コンテナ */
 .map-container {
-    height: 350px;
-    /* 拡大 */
+    height: 220px;
     border-radius: var(--radius-md);
     overflow: hidden;
     margin-bottom: 24px;
@@ -1029,7 +1028,7 @@ button {
 
 @media (max-width: 768px) {
     .map-container {
-        height: 280px;
+        height: 180px;
     }
 }
 
