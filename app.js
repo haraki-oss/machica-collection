@@ -412,8 +412,12 @@ async function populateAreaFilter() {
 
     // 初回のみ URL の ?area= パラメータを反映
     if (!_areaUrlApplied) {
+        const before = state.area;
         applyAreaFromUrl();
         _areaUrlApplied = true;
+        // URL でエリアが切り替わった場合は、initCards の初回描画を上書きするため
+        // ここでフィルターを再適用する
+        if (state.area !== before) applyFilters();
     }
     select.value = state.area;
     updateDocumentTitle();
