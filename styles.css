@@ -977,6 +977,24 @@ button {
     letter-spacing: 0.05em;
 }
 
+/* レコメンドスタッフ：地域名のすぐ隣、控えめなトーンで */
+.modal-recommender {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    /* 地域名との視覚的な区切り（細い縦線） */
+    border-left: 1px solid var(--border);
+    padding-left: 10px;
+    margin-left: 2px;
+}
+
+/* 3項目（area / recommender / like）になるとデフォルトの space-between で
+   等間隔に開いてしまうため、LIKE ボタンだけ右端に押し出す */
+.modal-meta .like-btn {
+    margin-left: auto;
+}
+
 .modal-category {
     font-size: 0.78rem;
     color: var(--text-muted);

@@ -809,6 +809,20 @@ function openModal(cardId) {
     document.getElementById('modalTitle').textContent = title;
     document.getElementById('modalDescription').textContent = desc;
     document.getElementById('modalArea').textContent = areaName;
+
+    // レコメンドスタッフ（任意項目）。空の場合は要素ごと非表示。
+    const recEl = document.getElementById('modalRecommender');
+    if (recEl) {
+        const rec = (card.recommended_by || '').trim();
+        if (rec) {
+            const prefix = lang === 'en' ? 'by ' : 'by ';
+            recEl.textContent = `${prefix}${rec}`;
+            recEl.style.display = '';
+        } else {
+            recEl.textContent = '';
+            recEl.style.display = 'none';
+        }
+    }
     // 住所は店舗情報パネル内に表示するのでここでは設定しない
     // モーダルのジャンルバッジは廃止（旧 #modalCategory）。バッジは画像オーバーレイ側のみ。
     const modalCategoryEl = document.getElementById('modalCategory');
