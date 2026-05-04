@@ -233,39 +233,76 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Data Fetching: Lists
-    async function fetchUserLists() {
-        if (!currentUser) return;
-        
-        const { data, error } = await supabaseClient
-            .from('lists')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .order('created_at', { ascending: false });
+    // checkSession と onAuthStateChange の両方から fetchUserLists が同時に走り、
+    // どちらも data.length === 0 を観測してデフォルトリストを二重に作成してしまうことがあるので
+    // インフライトを管理する。
+    let _listsFetchInFlight = null;
+    let _defaultListPending = false;
 
-        if (error) {
-            console.error('リストの取得エラー:', error);
-            return;
-        }
+    function fetchUserLists() {
+        if (!currentUser) return Promise.resolve();
+        if (_listsFetchInFlight) return _listsFetchInFlight;
+        _listsFetchInFlight = (async () => {
+            const { data, error } = await supabaseClient
+                .from('lists')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: false });
 
-        renderLists(data);
-        updateAddCardSelect(data);
-        
-        // リストが1つも無い場合はデフォルトリストを作成する
-        if (!data || data.length === 0) {
-            await createDefaultList();
+            if (error) {
+                console.error('リストの取得エラー:', error);
+                return;
+            }
+
+            renderLists(data);
+            updateAddCardSelect(data);
+
+            if ((!data || data.length === 0) && !_defaultListPending) {
+                _defaultListPending = true;
+                try {
+                    await createDefaultList();
+                } finally {
+                    _defaultListPending = false;
+                }
+            }
+        })();
+        try {
+            return _listsFetchInFlight;
+        } finally {
+            // 完了後にフラグをクリア
+            _listsFetchInFlight.finally(() => { _listsFetchInFlight = null; });
         }
     }
 
     async function createDefaultList() {
+        // 念のため再チェック：既に何か入っていたら作らない
+        const { data: existing } = await supabaseClient
+            .from('lists')
+            .select('id')
+            .eq('user_id', currentUser.id)
+            .limit(1);
+        if (existing && existing.length > 0) {
+            // 既にある場合はリスト UI だけ更新
+            await fetchUserLists();
+            return;
+        }
+
         const { data, error } = await supabaseClient
             .from('lists')
-            .insert([
-                { user_id: currentUser.id, name: 'マイコレクション' }
-            ])
+            .insert([{ user_id: currentUser.id, name: 'マイコレクション' }])
             .select();
-            
+
         if (!error && data) {
-            fetchUserLists(); // 再取得
+            // 作成後の再取得：renderLists + updateAddCardSelect を更新するため
+            const { data: lists } = await supabaseClient
+                .from('lists')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: false });
+            if (lists) {
+                renderLists(lists);
+                updateAddCardSelect(lists);
+            }
         }
     }
 
@@ -409,14 +446,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // List Detail View
+    let currentListId = null;
+    let currentListName = null;
+
     async function showListDetailView(hashUrl) {
         showView('listDetail');
-        
+
         const parts = hashUrl.split('?');
+        currentListId = null;
+        currentListName = null;
         if (parts.length > 1) {
             const params = new URLSearchParams(parts[1]);
             const listId = params.get('id');
             if (listId) {
+                currentListId = listId;
                 fetchListCards(listId);
             }
         }
@@ -432,6 +475,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         if (listData) {
             document.getElementById('list-detail-title').textContent = listData.name;
+            currentListName = listData.name;
         }
 
         // 2. カード情報の取得
@@ -498,6 +542,84 @@ document.addEventListener('DOMContentLoaded', async () => {
     // List Detail Back Button
     document.getElementById('list-detail-back-btn').addEventListener('click', () => {
         window.location.hash = '#mypage';
+    });
+
+    // ── リスト編集（リネーム） ─────────────────────
+    document.getElementById('list-detail-edit-btn').addEventListener('click', async () => {
+        if (!currentListId) return;
+        const newName = prompt('新しいリスト名を入力してください', currentListName || '');
+        if (newName == null) return; // キャンセル
+        const trimmed = newName.trim();
+        if (!trimmed) {
+            alert('リスト名は空にできません。');
+            return;
+        }
+        if (trimmed === currentListName) return; // 変更なし
+
+        const { error } = await supabaseClient
+            .from('lists')
+            .update({ name: trimmed })
+            .eq('id', currentListId);
+
+        if (error) {
+            alert('リスト名の更新に失敗しました: ' + error.message);
+            return;
+        }
+
+        currentListName = trimmed;
+        document.getElementById('list-detail-title').textContent = trimmed;
+    });
+
+    // ── リスト削除（中のクリップごと） ─────────────
+    document.getElementById('list-detail-delete-btn').addEventListener('click', async () => {
+        if (!currentListId) return;
+
+        // リスト内のクリップ数を表示してから確認
+        const { count } = await supabaseClient
+            .from('collected_cards')
+            .select('id', { count: 'exact', head: true })
+            .eq('list_id', currentListId);
+
+        const itemNote = (count && count > 0)
+            ? `このリストに含まれる ${count} 件のクリップも削除されます。`
+            : '';
+        const ok = confirm(`リスト「${currentListName || ''}」を削除しますか？\n${itemNote}\nこの操作は取り消せません。`);
+        if (!ok) return;
+
+        const btn = document.getElementById('list-detail-delete-btn');
+        btn.disabled = true;
+
+        // 1. リスト内のクリップを先に削除（外部キー / RLS で list が消えると参照不整合になり得るため）
+        const { error: cardsErr } = await supabaseClient
+            .from('collected_cards')
+            .delete()
+            .eq('list_id', currentListId);
+
+        if (cardsErr) {
+            alert('クリップの削除に失敗しました: ' + cardsErr.message);
+            btn.disabled = false;
+            return;
+        }
+
+        // 2. リスト本体を削除
+        const { error: listErr } = await supabaseClient
+            .from('lists')
+            .delete()
+            .eq('id', currentListId);
+
+        if (listErr) {
+            alert('リストの削除に失敗しました: ' + listErr.message);
+            btn.disabled = false;
+            return;
+        }
+
+        const deletedId = currentListId;
+        currentListId = null;
+        currentListName = null;
+        // マイページへ戻し、リスト一覧を再取得
+        window.location.hash = '#mypage';
+        await fetchUserLists();
+        btn.disabled = false;
     });
 
     // ============================================================
