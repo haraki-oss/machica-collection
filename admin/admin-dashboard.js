@@ -100,8 +100,9 @@ function renderGenreStats() {
   const html = allCategories.map(cat => {
     const count = cards.filter(c => c.category_id === cat.id).length;
     const pct = cards.length > 0 ? Math.round((count / cards.length) * 100) : 0;
+    const fallback = (cat.emoji || '🏷️').replace(/'/g, "&#39;");
     const iconHtml = cat.icon_url
-      ? `<img src="${cat.icon_url}" alt="${cat.name}" style="width:20px;height:20px;object-fit:contain;" />`
+      ? `<img src="${cat.icon_url}" alt="${cat.name}" style="width:20px;height:20px;object-fit:contain;" onerror="this.outerHTML='<span>${fallback}</span>'" />`
       : `<span>${cat.emoji || '🏷️'}</span>`;
 
     return `
