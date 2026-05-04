@@ -647,22 +647,24 @@ textarea.form-control {
 .podium-1st .podium-medal { font-size: 2.2rem; }
 
 .podium-thumb {
-    width: 92px;
-    height: 92px;
-    border-radius: 50%;
+    width: 96px;
+    height: 128px;
+    aspect-ratio: 3 / 4;
+    border-radius: 10px;
     object-fit: cover;
     background: var(--bg-soft);
-    border: 4px solid var(--border);
+    border: 3px solid var(--border);
     box-shadow: var(--shadow-md);
     margin-bottom: 10px;
     display: block;
 }
 
 .podium-1st .podium-thumb {
-    width: 116px;
-    height: 116px;
+    width: 124px;
+    height: 165px;
     border-color: #FFD75A;
-    box-shadow: 0 8px 24px rgba(255, 215, 90, 0.45), 0 2px 6px rgba(0, 0, 0, 0.08);
+    border-width: 4px;
+    box-shadow: 0 10px 28px rgba(255, 215, 90, 0.45), 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .podium-2nd .podium-thumb {
@@ -670,8 +672,8 @@ textarea.form-control {
 }
 
 .podium-3rd .podium-thumb {
-    width: 78px;
-    height: 78px;
+    width: 84px;
+    height: 112px;
     border-color: #E0A56F;
 }
 
@@ -794,9 +796,9 @@ textarea.form-control {
         gap: 8px;
         min-height: 320px;
     }
-    .podium-1st .podium-thumb { width: 88px; height: 88px; }
-    .podium-thumb { width: 70px; height: 70px; }
-    .podium-3rd .podium-thumb { width: 62px; height: 62px; }
+    .podium-thumb { width: 72px; height: 96px; }
+    .podium-1st .podium-thumb { width: 92px; height: 122px; }
+    .podium-3rd .podium-thumb { width: 64px; height: 86px; }
     .podium-rank-num { font-size: 1.5rem; }
     .podium-1st .podium-rank-num { font-size: 1.8rem; }
     .podium-title { font-size: 0.78rem; }

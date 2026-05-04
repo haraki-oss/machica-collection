@@ -121,9 +121,8 @@ function renderPodiumSlot(rank, item) {
   }
 
   const { card, likes } = item;
-  const cat = allCategories.find(c => c.id === card.category_id);
-  const fallback = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect fill='%23F1F5F9' width='120' height='120'/%3E%3Ctext fill='%2394A3B8' font-size='32' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E📷%3C/text%3E%3C/svg%3E";
-  const subtitle = cat ? `${cat.emoji || '🏷️'} ${cat.name}` : (card.area || '');
+  const fallback = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='160' viewBox='0 0 120 160'%3E%3Crect fill='%23F1F5F9' width='120' height='160'/%3E%3Ctext fill='%2394A3B8' font-size='32' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E📷%3C/text%3E%3C/svg%3E";
+  const subtitle = card.area ? `📍 ${card.area}` : '';
 
   return `
     <div class="podium-item ${rankClass}">
