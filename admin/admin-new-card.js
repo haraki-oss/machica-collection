@@ -256,6 +256,7 @@ function bindFormEvents() {
             opening_hours: document.getElementById('cardOpeningHours')?.value.trim() || null,
             phone: document.getElementById('cardPhone')?.value.trim() || null,
             website: document.getElementById('cardWebsite')?.value.trim() || null,
+            recommended_by: document.getElementById('cardRecommender')?.value.trim() || null,
             image_url: imageBase64,
             image_url_back: imageBase64Back,
             gallery: galleryImages,

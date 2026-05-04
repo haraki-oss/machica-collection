@@ -64,14 +64,17 @@ function renderCardTable() {
   if (label) label.textContent = allCards.length;
 
   if (allCards.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:48px;color:var(--text-muted);">スポットが見つかりません</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:48px;color:var(--text-muted);">スポットが見つかりません</td></tr>`;
     return;
   }
 
   tbody.innerHTML = allCards.map(card => {
     const cat = getAllCategories().find(c => c.id === card.category_id);
     const area = card.area || '-';
-    const address = card.address || '-';
+    const recommender = card.recommended_by || '';
+    const recommenderHtml = recommender
+      ? `<span class="recommender-chip">⭐ ${recommender}</span>`
+      : `<span style="font-size:0.82rem;color:var(--text-muted);">—</span>`;
 
     return `
             <tr draggable="true" data-id="${card.id}">
@@ -91,7 +94,7 @@ function renderCardTable() {
                     </span>
                 </td>
                 <td><span style="font-size:0.85rem;">${area}</span></td>
-                <td><span style="font-size:0.82rem; color:var(--text-muted);">${address}</span></td>
+                <td>${recommenderHtml}</td>
                 <td>
                     <div style="display:flex; gap:6px;">
                         <a href="cards-edit.html?id=${card.id}" class="action-btn">編集</a>
@@ -238,7 +241,7 @@ function labelOfSortKey(key) {
     case 'title': return 'スポット名';
     case 'category': return 'ジャンル';
     case 'area': return 'エリア';
-    case 'address': return '住所';
+    case 'recommender': return 'レコメンドスタッフ';
     default: return key;
   }
 }
@@ -258,7 +261,7 @@ function sortAllCardsBy(column, direction) {
         return (cat?.name || '').toLowerCase();
       }
       case 'area': return (card.area || '').toLowerCase();
-      case 'address': return (card.address || '').toLowerCase();
+      case 'recommender': return (card.recommended_by || '').toLowerCase();
       default: return '';
     }
   };

@@ -77,6 +77,9 @@ async function loadCardData() {
     if (document.getElementById('cardWebsite')) {
         document.getElementById('cardWebsite').value = card.website || '';
     }
+    if (document.getElementById('cardRecommender')) {
+        document.getElementById('cardRecommender').value = card.recommended_by || '';
+    }
 
     // 画像の復元
     if (card.image_url) {
@@ -293,6 +296,7 @@ function bindFormEvents() {
             opening_hours: document.getElementById('cardOpeningHours')?.value.trim() || null,
             phone: document.getElementById('cardPhone')?.value.trim() || null,
             website: document.getElementById('cardWebsite')?.value.trim() || null,
+            recommended_by: document.getElementById('cardRecommender')?.value.trim() || null,
             image_url: imageBase64,
             image_url_back: imageBase64Back,
             gallery: galleryImages,
