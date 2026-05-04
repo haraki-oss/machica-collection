@@ -87,8 +87,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // === Routing Logic ===
     function handleRoute() {
+        try {
+            _handleRouteInner();
+        } catch (e) {
+            // ルーティング中の例外で画面が完全に空になるのを防ぎ、
+            // 何が起きたか DevTools コンソールに残す
+            console.error('[clip] Routing failed:', e);
+            try {
+                Object.values(views).forEach(view => view && view.classList.add('hidden'));
+                showView(currentUser ? 'mypage' : 'login');
+            } catch (_) { /* noop */ }
+        }
+    }
+
+    function _handleRouteInner() {
         const hash = window.location.hash;
-        
+
         // Hide all views（要素が見つからないケースに備えて null チェック）
         Object.values(views).forEach(view => view && view.classList.add('hidden'));
 
@@ -126,7 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Default
             showView(currentUser ? 'mypage' : 'login');
         }
-        
+
         updateNav();
     }
 
@@ -358,21 +372,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Add Card View
     function showAddCardView(hashUrl) {
         showView('add');
-        
+
         // Parse URL parameters from hash (e.g. #add?card_id=1&title=xxx&image=url)
         const parts = hashUrl.split('?');
         if (parts.length > 1) {
             const params = new URLSearchParams(parts[1]);
+            // URLSearchParams は既にデコード済みなので、二重 decodeURIComponent は不要
+            // （二重デコードすると URL に偶々残った "%" 文字で URIError を投げて画面が真っ白になる）
             currentCardData = {
                 id: params.get('card_id'),
                 title: params.get('title') || 'タイトルなし',
                 image: params.get('image') || ''
             };
-            
+
             addCardTitle.textContent = currentCardData.title;
-            
+
             if (currentCardData.image) {
-                addCardImage.src = decodeURIComponent(currentCardData.image);
+                addCardImage.src = currentCardData.image;
                 addCardImage.classList.remove('hidden');
                 addCardPlaceholder.classList.add('hidden');
             } else {
@@ -380,7 +396,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 addCardPlaceholder.classList.remove('hidden');
             }
         }
-        
+
         // リスト一覧が読み込まれていなければ読み込む
         if (addSelectList.options.length <= 1) {
             fetchUserLists();
@@ -417,7 +433,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     list_id: listId,
                     original_card_id: currentCardData.id,
                     title: currentCardData.title,
-                    image_url: currentCardData.image ? decodeURIComponent(currentCardData.image) : null
+                    image_url: currentCardData.image || null
                 }]);
 
             if (error) throw error;
