@@ -936,6 +936,60 @@ textarea.form-control {
     }
 }
 
+/* ==================================================
+   定休日：曜日チェックボックス（トグルピル）
+   ================================================== */
+.weekday-cb-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.weekday-cb {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+}
+
+.weekday-cb input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+}
+
+.weekday-cb span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    height: 38px;
+    padding: 0 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 100px;
+    background: var(--bg-white);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+.weekday-cb:hover span {
+    border-color: var(--text-muted);
+    color: var(--text-primary);
+}
+
+.weekday-cb input[type="checkbox"]:checked + span {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.weekday-cb input[type="checkbox"]:focus-visible + span {
+    box-shadow: 0 0 0 3px rgba(30, 27, 25, 0.15);
+}
+
 /* トースト通知 */
 .toast {
     position: fixed;

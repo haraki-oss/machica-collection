@@ -1185,12 +1185,13 @@ function loadPlaceDetails(card) {
     const data = {
         address: address || null,
         opening_hours: card.opening_hours || null,
+        closed_days: card.closed_days || null,
         phone: card.phone || null,
         website: card.website || null,
     };
 
     // 住所も店舗情報も完全に空の場合のみパネルを隠す
-    if (!data.address && !data.opening_hours && !data.phone && !data.website) return;
+    if (!data.address && !data.opening_hours && !data.closed_days && !data.phone && !data.website) return;
 
     renderBusinessInfo(data, container);
 }
@@ -1218,6 +1219,25 @@ function humanizeOpeningHours(raw) {
         s = s.replace(new RegExp(k, 'g'), dayMap[k]);
     });
     return s;
+}
+
+// 定休日コード ("mon,tue") を表示用の文字列に。lang が 'en' なら英語短縮、それ以外は日本語短縮。
+const CLOSED_DAY_LABELS = {
+    ja: { mon: '月', tue: '火', wed: '水', thu: '木', fri: '金', sat: '土', sun: '日' },
+    en: { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' },
+};
+const CLOSED_DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+function formatClosedDays(raw, lang) {
+    if (!raw) return '';
+    const set = new Set(String(raw).split(',').map(s => s.trim().toLowerCase()).filter(Boolean));
+    if (!set.size) return '';
+    const ordered = CLOSED_DAY_ORDER.filter(c => set.has(c));
+    if (ordered.length === 7) return lang === 'en' ? 'Closed daily' : '毎日定休';
+    const labels = CLOSED_DAY_LABELS[lang === 'en' ? 'en' : 'ja'];
+    const sep = lang === 'en' ? ', ' : '・';
+    const prefix = lang === 'en' ? 'Closed: ' : '定休日：';
+    return prefix + ordered.map(c => labels[c] || c).join(sep);
 }
 
 function renderBusinessInfo(data, container) {
@@ -1248,6 +1268,24 @@ function renderBusinessInfo(data, container) {
         parts.push(`
             <div class="bi-row bi-empty">
                 <span class="bi-icon">⏰</span>
+                <span class="bi-summary-text">${PLACEHOLDER}</span>
+            </div>
+        `);
+    }
+
+    // 定休日（曜日チェックボックスから来る "mon,tue" 形式）
+    const closedText = formatClosedDays(data.closed_days, lang);
+    if (closedText) {
+        parts.push(`
+            <div class="bi-row bi-closed-row">
+                <span class="bi-icon">🚫</span>
+                <span class="bi-summary-text">${escapeHtml(closedText)}</span>
+            </div>
+        `);
+    } else {
+        parts.push(`
+            <div class="bi-row bi-empty">
+                <span class="bi-icon">🚫</span>
                 <span class="bi-summary-text">${PLACEHOLDER}</span>
             </div>
         `);

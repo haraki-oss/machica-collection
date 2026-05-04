@@ -1,8 +1,20 @@
 const LS_KEY = 'spotcard_custom_cards';
+const CLOSED_DAY_CODES = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 let imageBase64 = null;      // 表面画像
 let imageBase64Back = null;  // 裏面画像
 let galleryImages = [];      // ギャラリー画像（配列）
+
+// 定休日チェックボックス → "mon,tue" 形式（並び固定、空なら null）
+function getClosedDaysFromCheckboxes() {
+    const wrap = document.getElementById('cardClosedDays');
+    if (!wrap) return null;
+    const checked = [...wrap.querySelectorAll('input[type="checkbox"]:checked')]
+        .map(cb => cb.value.toLowerCase())
+        .filter(v => CLOSED_DAY_CODES.includes(v));
+    const ordered = CLOSED_DAY_CODES.filter(code => checked.includes(code));
+    return ordered.length ? ordered.join(',') : null;
+}
 
 // エラーキャッチ（デバッグ用）
 window.onerror = function (msg, url, line) {
@@ -254,6 +266,7 @@ function bindFormEvents() {
             lng: parseFloat(document.getElementById('cardLng').value) || null,
             // 店舗情報（OSM 自動取得＋手動編集）
             opening_hours: document.getElementById('cardOpeningHours')?.value.trim() || null,
+            closed_days: getClosedDaysFromCheckboxes(),
             phone: document.getElementById('cardPhone')?.value.trim() || null,
             website: document.getElementById('cardWebsite')?.value.trim() || null,
             recommended_by: document.getElementById('cardRecommender')?.value.trim() || null,

@@ -77,6 +77,7 @@ async function loadCardData() {
     if (document.getElementById('cardWebsite')) {
         document.getElementById('cardWebsite').value = card.website || '';
     }
+    setClosedDaysCheckboxes(card.closed_days);
     if (document.getElementById('cardRecommender')) {
         document.getElementById('cardRecommender').value = card.recommended_by || '';
     }
@@ -294,6 +295,7 @@ function bindFormEvents() {
             lng: parseFloat(document.getElementById('cardLng').value) || null,
             // 店舗情報
             opening_hours: document.getElementById('cardOpeningHours')?.value.trim() || null,
+            closed_days: getClosedDaysFromCheckboxes(),
             phone: document.getElementById('cardPhone')?.value.trim() || null,
             website: document.getElementById('cardWebsite')?.value.trim() || null,
             recommended_by: document.getElementById('cardRecommender')?.value.trim() || null,
@@ -314,6 +316,30 @@ function bindFormEvents() {
             btn.textContent = '💾 更新する';
         }
     });
+}
+
+// ── 定休日チェックボックス ↔ 文字列変換 ───────────
+// 保存形式: "mon,tue" のように曜日コードを , 区切り。空なら null。
+const CLOSED_DAY_CODES = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+function setClosedDaysCheckboxes(value) {
+    const wrap = document.getElementById('cardClosedDays');
+    if (!wrap) return;
+    const list = (value || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    wrap.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.checked = list.includes(String(cb.value).toLowerCase());
+    });
+}
+
+function getClosedDaysFromCheckboxes() {
+    const wrap = document.getElementById('cardClosedDays');
+    if (!wrap) return null;
+    const checked = [...wrap.querySelectorAll('input[type="checkbox"]:checked')]
+        .map(cb => cb.value.toLowerCase())
+        .filter(v => CLOSED_DAY_CODES.includes(v));
+    // CLOSED_DAY_CODES の順序で並べ直す（Mon→Sun）
+    const ordered = CLOSED_DAY_CODES.filter(code => checked.includes(code));
+    return ordered.length ? ordered.join(',') : null;
 }
 
 // ── その他ユーティリティ ───────────────────────

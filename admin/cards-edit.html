@@ -313,6 +313,20 @@
                             <textarea id="cardOpeningHours" class="form-control" rows="2"
                                 placeholder="例：月-金 09:00-17:00; 土 10:00-15:00"></textarea>
                         </div>
+                        <div class="form-group full">
+                            <label class="form-label">定休日</label>
+                            <div class="weekday-cb-group" id="cardClosedDays" data-field="closed_days">
+                                <label class="weekday-cb"><input type="checkbox" value="mon"><span>月</span></label>
+                                <label class="weekday-cb"><input type="checkbox" value="tue"><span>火</span></label>
+                                <label class="weekday-cb"><input type="checkbox" value="wed"><span>水</span></label>
+                                <label class="weekday-cb"><input type="checkbox" value="thu"><span>木</span></label>
+                                <label class="weekday-cb"><input type="checkbox" value="fri"><span>金</span></label>
+                                <label class="weekday-cb"><input type="checkbox" value="sat"><span>土</span></label>
+                                <label class="weekday-cb"><input type="checkbox" value="sun"><span>日</span></label>
+                            </div>
+                            <p class="form-hint" style="margin-top:6px;font-size:0.8rem;color:var(--text-muted);">
+                                定休日を曜日で複数選択できます。空のまま保存すると「定休日なし／不定休」扱いになります。</p>
+                        </div>
                         <div class="form-group">
                             <label class="form-label" for="cardPhone">電話番号</label>
                             <input type="tel" id="cardPhone" class="form-control" placeholder="例：03-1234-5678" />
