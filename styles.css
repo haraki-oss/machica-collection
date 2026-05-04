@@ -1035,6 +1035,21 @@ button {
     margin-left: 2px;
 }
 
+/* クリックでスタッフフィルターに飛べる時の状態 */
+.modal-recommender.is-clickable {
+    cursor: pointer;
+    transition: color 0.15s ease, border-bottom-color 0.15s ease;
+    border-bottom: 1px dashed transparent;
+    padding-bottom: 1px;
+}
+
+.modal-recommender.is-clickable:hover,
+.modal-recommender.is-clickable:focus-visible {
+    color: var(--primary);
+    border-bottom-color: var(--text-muted);
+    outline: none;
+}
+
 /* 3項目（area / recommender / like）になるとデフォルトの space-between で
    等間隔に開いてしまうため、LIKE ボタンだけ右端に押し出す */
 .modal-meta .like-btn {

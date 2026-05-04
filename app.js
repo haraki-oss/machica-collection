@@ -894,6 +894,7 @@ function openModal(cardId) {
     document.getElementById('modalArea').textContent = areaName;
 
     // レコメンドスタッフ（任意項目）。空の場合は要素ごと非表示。
+    // クリックでそのスタッフのフィルターを適用しモーダルを閉じる。
     const recEl = document.getElementById('modalRecommender');
     if (recEl) {
         const rec = (card.recommended_by || '').trim();
@@ -901,9 +902,41 @@ function openModal(cardId) {
             const prefix = lang === 'en' ? 'by ' : 'by ';
             recEl.textContent = `${prefix}${rec}`;
             recEl.style.display = '';
+            recEl.classList.add('is-clickable');
+            recEl.setAttribute('role', 'button');
+            recEl.setAttribute('tabindex', '0');
+            recEl.setAttribute('title',
+                lang === 'en'
+                    ? `Show all spots recommended by ${rec}`
+                    : `${rec} がレコメンドしたスポットだけ表示`);
+
+            const triggerStaffFilter = () => {
+                state.staff = rec;
+                const sel = document.getElementById('staffSelect');
+                if (sel) sel.value = rec;
+                syncStaffToUrl();
+                closeModal();
+                applyFilters();
+                // フィルター位置に視線を戻す
+                const filterSec = document.querySelector('.filter-section');
+                if (filterSec) filterSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+            recEl.onclick = triggerStaffFilter;
+            recEl.onkeydown = (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    triggerStaffFilter();
+                }
+            };
         } else {
             recEl.textContent = '';
             recEl.style.display = 'none';
+            recEl.classList.remove('is-clickable');
+            recEl.removeAttribute('role');
+            recEl.removeAttribute('tabindex');
+            recEl.removeAttribute('title');
+            recEl.onclick = null;
+            recEl.onkeydown = null;
         }
     }
     // 住所は店舗情報パネル内に表示するのでここでは設定しない
