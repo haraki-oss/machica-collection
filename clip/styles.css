@@ -1,0 +1,25 @@
+/* Custom Styles for Machica Clip */
+body {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.view-section {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Hide scrollbar for cleaner UI on mobile */
+::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+}

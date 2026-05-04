@@ -176,9 +176,9 @@ function bindEvents() {
         const imageUrl = encodeURIComponent(card.image_url || '');
         const encodedTitle = encodeURIComponent(title);
 
-        // Machica Clip アプリへのパス
-        // 同一サーバー内の別ディレクトリを想定（../machica-clip/）
-        const clipUrl = `../machica-clip/index.html#add?card_id=${card.id}&title=${encodedTitle}&image=${imageUrl}`;
+        // Machica Clip は Collection と同じデプロイ配下 (/clip/) にある。
+        // 相対パスにしておくとローカル / Vercel preview / production で同じく動く。
+        const clipUrl = `clip/index.html#add?card_id=${card.id}&title=${encodedTitle}&image=${imageUrl}`;
 
         window.location.href = clipUrl;
     });
