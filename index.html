@@ -69,9 +69,12 @@
                     <input type="text" id="searchInput" class="search-input" placeholder="スポット名・キーワードで検索…" />
                     <button class="search-clear" id="searchClear" aria-label="クリア">✕</button>
                 </div>
-                <select class="staff-select" id="staffSelect" aria-label="スタッフで絞り込み">
-                    <option value="all">スタッフで絞り込み</option>
-                </select>
+                <div class="staff-filter-row">
+                    <select class="staff-select" id="staffSelect" aria-label="スタッフで絞り込み">
+                        <option value="all">スタッフで絞り込み</option>
+                    </select>
+                    <button type="button" class="staff-clear-btn" id="staffClearBtn" aria-label="スタッフフィルターを解除">✕ 解除</button>
+                </div>
             </div>
             <!-- ジャンルフィルター -->
             <div class="genre-filters" id="genreFilters">

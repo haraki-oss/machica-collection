@@ -141,6 +141,18 @@ function bindEvents() {
     document.getElementById('staffSelect')?.addEventListener('change', (e) => {
         state.staff = e.target.value;
         syncStaffToUrl();
+        updateStaffFilterUI();
+        applyFilters();
+    });
+
+    // スタッフフィルター解除ボタン
+    document.getElementById('staffClearBtn')?.addEventListener('click', () => {
+        if (state.staff === 'all') return;
+        state.staff = 'all';
+        const sel = document.getElementById('staffSelect');
+        if (sel) sel.value = 'all';
+        syncStaffToUrl();
+        updateStaffFilterUI();
         applyFilters();
     });
 
@@ -509,6 +521,11 @@ function populateStaffFilter() {
     if (firstOpt) {
         firstOpt.textContent = state.lang === 'en' ? 'Filter by staff' : 'スタッフで絞り込み';
     }
+    const clearBtn = document.getElementById('staffClearBtn');
+    if (clearBtn) {
+        clearBtn.textContent = state.lang === 'en' ? '✕ Clear' : '✕ 解除';
+        clearBtn.setAttribute('aria-label', state.lang === 'en' ? 'Clear staff filter' : 'スタッフフィルターを解除');
+    }
     select.innerHTML = '';
     if (firstOpt) select.appendChild(firstOpt);
     staffList.forEach(name => {
@@ -532,6 +549,16 @@ function populateStaffFilter() {
         if (state.staff !== before) applyFilters();
     }
     select.value = state.staff;
+    updateStaffFilterUI();
+}
+
+// スタッフフィルターのアクティブ状態を見た目に反映
+function updateStaffFilterUI() {
+    const select = document.getElementById('staffSelect');
+    const clearBtn = document.getElementById('staffClearBtn');
+    const active = state.staff && state.staff !== 'all';
+    if (select) select.classList.toggle('is-active', active);
+    if (clearBtn) clearBtn.classList.toggle('is-visible', active);
 }
 
 function applyStaffFromUrl() {
@@ -706,6 +733,7 @@ function resetFilters() {
     });
     syncAreaToUrl();
     syncStaffToUrl();
+    updateStaffFilterUI();
     applyFilters();
 }
 
@@ -915,6 +943,7 @@ function openModal(cardId) {
                 const sel = document.getElementById('staffSelect');
                 if (sel) sel.value = rec;
                 syncStaffToUrl();
+                updateStaffFilterUI();
                 closeModal();
                 applyFilters();
                 // フィルター位置に視線を戻す

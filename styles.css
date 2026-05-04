@@ -384,9 +384,16 @@ button {
     flex: 0 0 auto;
 }
 
-/* スタッフフィルター：エリアより主張しない控えめな見た目 */
-.staff-select {
+/* スタッフフィルター行（select + 解除ボタン） */
+.staff-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     align-self: flex-start;
+}
+
+/* スタッフフィルター：通常時は控えめな見た目 */
+.staff-select {
     border: none;
     background: transparent;
     color: var(--text-muted);
@@ -402,7 +409,7 @@ button {
     background-position: right 4px center;
     border-bottom: 1px dashed var(--border);
     border-radius: 0;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease, padding 0.15s ease;
 }
 
 .staff-select:hover {
@@ -414,6 +421,52 @@ button {
     outline: none;
     color: var(--text-primary);
     border-bottom-color: var(--text-primary);
+}
+
+/* フィルター適用中：アクティブなチップとして目立たせる */
+.staff-select.is-active {
+    background-color: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    padding: 5px 26px 5px 12px;
+    border-bottom: none;
+    border-radius: 100px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23FFFFFF' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+    background-position: right 10px center;
+    box-shadow: 0 2px 8px rgba(30, 27, 25, 0.18);
+}
+
+.staff-select.is-active:hover,
+.staff-select.is-active:focus {
+    color: #fff;
+    border-bottom: none;
+    box-shadow: 0 4px 12px rgba(30, 27, 25, 0.25);
+}
+
+/* 解除ボタン：通常は隠れて、フィルター中だけ表示 */
+.staff-clear-btn {
+    display: none;
+    align-items: center;
+    gap: 2px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 0.72rem;
+    font-family: inherit;
+    padding: 3px 10px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.staff-clear-btn.is-visible {
+    display: inline-flex;
+}
+
+.staff-clear-btn:hover {
+    background: var(--bg-soft);
+    color: var(--text-primary);
+    border-color: var(--text-muted);
 }
 
 .search-box {
