@@ -11,7 +11,7 @@ const CARDS_DATA = [
         // 例: image_url: "images/card_robata_izaribi.jpg",
         image_url: "https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=600&q=80",
         address: "北海道函館市末広町4-5",
-        area: "北海道",
+        area: "旭川",
         latitude: 41.7686,
         longitude: 140.7257,
         category_id: 1,

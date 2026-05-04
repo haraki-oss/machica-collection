@@ -10,11 +10,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 1. 移行の実行
     await migrateLocalStorageToIndexedDB();
 
+    // 1b. 旧エリア名でロックされたカードを現エリア名に追従させる（一回性、冪等）
+    await migrateLegacyCardAreaNames();
+
     // 2. データの初期化
     await initAreas();
     renderAreaTable();
     bindEvents();
 });
+
+/**
+ * カードの area フィールドが旧エリア名のままになっているケースを救済する。
+ * 例: 過去に「北海道」→「旭川」とリネームされたが、所属カードは area:"北海道"
+ *      のまま。これだと公開サイトのフィルターから外れる。
+ *
+ * 戦略:
+ *   現在の有効エリア名集合に存在しない card.area を「孤児」と見做し、
+ *   {OLD: NEW} の対応表（LEGACY_AREA_RENAMES）で書き換える。
+ *   何度実行しても安全（対象が無ければ何もしない）。
+ */
+const LEGACY_AREA_RENAMES = {
+    '北海道': '旭川',
+};
+
+async function migrateLegacyCardAreaNames() {
+    try {
+        const cards = await machicaDB.getAll('cards');
+        const stale = cards.filter(c => c && LEGACY_AREA_RENAMES[c.area]);
+        if (!stale.length) return;
+        for (const c of stale) c.area = LEGACY_AREA_RENAMES[c.area];
+        await machicaDB.put('cards', stale);
+        console.log(`Migrated ${stale.length} card(s) to renamed area names.`);
+    } catch (e) {
+        console.warn('migrateLegacyCardAreaNames failed:', e);
+    }
+}
 
 async function initAreas() {
     allAreas = await getAllAreasAsync();
@@ -183,8 +213,9 @@ async function saveAreaEdit() {
         return;
     }
 
-    // 1. メモリ反映
+    // 1. メモリ反映（旧名は事前に控える）
     const target = allAreas.find(a => a.id === editTargetId);
+    const oldName = target?.name;
     if (target) {
         target.name = name;
         target.name_en = nameEn;
@@ -208,9 +239,26 @@ async function saveAreaEdit() {
         await machicaDB.put('areas', { id: editTargetId, name, name_en: nameEn });
     }
 
+    // 3. 名称が変わった場合は所属カードの area 文字列も追従させる
+    let migrated = 0;
+    if (oldName && oldName !== name) {
+        try {
+            const cards = await machicaDB.getAll('cards');
+            const stale = cards.filter(c => c && c.area === oldName);
+            if (stale.length) {
+                for (const c of stale) c.area = name;
+                await machicaDB.put('cards', stale);
+                migrated = stale.length;
+            }
+        } catch (e) {
+            console.warn('Card area migration failed:', e);
+        }
+    }
+
     renderAreaTable();
     closeEditModal();
-    showToast(`エリア「${name}」を更新しました`);
+    const suffix = migrated > 0 ? `（カード ${migrated} 件も更新）` : '';
+    showToast(`エリア「${name}」を更新しました${suffix}`);
 }
 
 function showToast(msg) {

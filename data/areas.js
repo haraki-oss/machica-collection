@@ -7,7 +7,7 @@
  * =====================================================
  */
 const AREAS = [
-    { id: 1, name: '北海道', name_en: 'Hokkaido' },
+    { id: 1, name: '旭川', name_en: 'Asahikawa' },
     { id: 2, name: '東京', name_en: 'Tokyo' },
     { id: 3, name: '金沢', name_en: 'Kanazawa' },
     { id: 4, name: '高山', name_en: 'Takayama' },
