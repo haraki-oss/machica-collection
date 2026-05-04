@@ -78,20 +78,16 @@ async function initCards() {
     // 通すことで現在の state.area / state.genre / state.keyword に従わせる。
     applyFilters();
 
-    // URLパラメータのチェック（地図からの遷移など）
+    // URL パラメータ ?card=N のチェック。
+    // 旧仕様では開いた瞬間にパラメータを除去していたが、共有用 URL として
+    // 残しておきたいので消さない。openModal 側で重複 push を抑止している。
     const params = new URLSearchParams(window.location.search);
     const targetCardId = params.get('card');
     if (targetCardId) {
         const idNum = parseInt(targetCardId, 10);
         if (!isNaN(idNum) && state.cards.some(c => c.id === idNum)) {
-            // DOM描画待ちのため少しだけ遅延させる
-            setTimeout(() => {
-                openModal(idNum);
-            }, 100);
-            
-            // パラメータをURLから消去しておく（任意）
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, document.title, newUrl);
+            // DOM 描画待ちのため少しだけ遅延させる
+            setTimeout(() => { openModal(idNum); }, 100);
         }
     }
 }
@@ -822,10 +818,24 @@ function createCardHTML(card, index) {
 // function toggleCollect(cardId) { ... }
 
 // ── モーダル ──────────────────────────────────────
+// popstate（ブラウザ戻る/進む）経由で開閉する場合は URL を再 push しない
+let _modalNavInProgress = false;
+
 function openModal(cardId) {
     const card = state.cards.find(c => c.id === cardId);
     if (!card) return;
     state.currentCard = card;
+
+    // URL に ?card=N を反映（既に同じ値なら no-op）
+    if (!_modalNavInProgress) {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('card') !== String(cardId)) {
+            params.set('card', String(cardId));
+            const qs = params.toString();
+            const newUrl = window.location.pathname + (qs ? '?' + qs : '') + window.location.hash;
+            window.history.pushState({ card: cardId }, '', newUrl);
+        }
+    }
 
     const cat = getCategoryById(card.category_id);
 
@@ -1141,6 +1151,17 @@ function closeModal() {
     document.body.style.overflow = '';
     state.currentCard = null;
 
+    // URL から ?card= を除去（他のフィルターパラメータは維持）
+    if (!_modalNavInProgress) {
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('card')) {
+            params.delete('card');
+            const qs = params.toString();
+            const newUrl = window.location.pathname + (qs ? '?' + qs : '') + window.location.hash;
+            window.history.replaceState({}, '', newUrl);
+        }
+    }
+
     // 画像クリア（次回チラつき防止）
     setTimeout(() => {
         const img = document.getElementById('modalImage');
@@ -1149,6 +1170,27 @@ function closeModal() {
         if (thumbs) thumbs.innerHTML = '';
     }, 300);
 }
+
+// ブラウザの戻る/進むで URL の ?card= が変化したらモーダルを連動させる
+window.addEventListener('popstate', () => {
+    _modalNavInProgress = true;
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const cardParam = params.get('card');
+        if (cardParam) {
+            const idNum = parseInt(cardParam, 10);
+            if (!isNaN(idNum) && state.cards.some(c => c.id === idNum)) {
+                if (!state.currentCard || state.currentCard.id !== idNum) {
+                    openModal(idNum);
+                }
+            }
+        } else if (state.currentCard) {
+            closeModal();
+        }
+    } finally {
+        _modalNavInProgress = false;
+    }
+});
 
 // ── Google Maps 連携 ──────────────────────────────
 function loadGoogleMapsAPI() {
@@ -1425,18 +1467,32 @@ function buildMapFallback(lat, lng) {
 function shareCard() {
     if (!state.currentCard) return;
     const card = state.currentCard;
-    const text = `${card.title} - ${card.area}\n${card.description.slice(0, 80)}…`;
+
+    // 共有用 URL：?card= が必ず付いた絶対 URL を組み立てる
+    // （URL バーは常に同期しているのでそのまま使ってもよいが、確実性のため再構築）
+    const params = new URLSearchParams(window.location.search);
+    params.set('card', String(card.id));
+    const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+
+    const desc = (card.description || '').slice(0, 80);
+    const summary = `${card.title} - ${card.area}${desc ? '\n' + desc + '…' : ''}`;
 
     if (navigator.share) {
-        navigator.share({ title: card.title, text, url: window.location.href }).catch(() => { });
-    } else {
-        navigator.clipboard.writeText(text).then(() => {
-            const btn = document.getElementById('shareBtn');
-            if (btn) {
-                const orig = btn.innerHTML;
-                btn.innerHTML = '<span>✓</span> コピーしました';
-                setTimeout(() => { btn.innerHTML = orig; }, 2000);
-            }
-        });
+        navigator.share({ title: card.title, text: summary, url }).catch(() => { });
+        return;
     }
+
+    // クリップボード fallback：本文 + URL を一緒にコピー
+    const fullText = `${summary}\n${url}`;
+    navigator.clipboard.writeText(fullText).then(() => {
+        const btn = document.getElementById('shareBtn');
+        if (btn) {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<span>✓</span> リンクをコピーしました';
+            setTimeout(() => { btn.innerHTML = orig; }, 2000);
+        }
+    }).catch(() => {
+        // 古いブラウザ向け：プロンプトでコピー
+        try { window.prompt('リンクをコピーしてください', url); } catch (_) { }
+    });
 }
