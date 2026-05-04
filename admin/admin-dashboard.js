@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 3. 表示
   renderStats();
   renderGenreStats();
-  renderRecentCards();
+  renderTopLiked();
 });
 
 async function getAllCategoriesAsync() {
@@ -68,29 +68,81 @@ function renderGenreStats() {
   container.innerHTML = html;
 }
 
-function renderRecentCards() {
-  const container = document.getElementById('recentCards');
+async function renderTopLiked() {
+  const container = document.getElementById('topLikedPodium');
   if (!container) return;
 
-  // ID降順 = 最近登録した順
-  const sorted = [...allCards].sort((a, b) => b.id - a.id);
-  const recent = sorted.slice(0, 6);
+  // LIKE 数マップを取得（公開サイトと同じく settings.card_likes に保存されている）
+  const settings = await machicaDB.getAll('settings');
+  const likesMap = settings.find(s => s.id === 'card_likes')?.value || {};
 
-  container.innerHTML = recent.map(card => {
-    const cat = allCategories.find(c => c.id === card.category_id);
+  // 各カードに likes を付与してソート
+  const ranked = allCards
+    .map(c => ({ card: c, likes: Number(likesMap[String(c.id)] || 0) }))
+    .filter(x => x.likes > 0)
+    .sort((a, b) => b.likes - a.likes)
+    .slice(0, 3);
+
+  // 表彰台の表示順は 2位 → 1位 → 3位（中央が一番高い）
+  const slots = [
+    { rank: 2, data: ranked[1] },
+    { rank: 1, data: ranked[0] },
+    { rank: 3, data: ranked[2] },
+  ];
+
+  container.innerHTML = slots.map(slot => renderPodiumSlot(slot.rank, slot.data)).join('');
+
+  // 一件もまだ LIKE が無い場合のメッセージ
+  if (!ranked.length) {
+    container.innerHTML = `
+      <div class="podium-empty">
+        ♡ まだ LIKE されたスポットがありません<br/>
+        <span style="font-size:0.8rem;color:var(--text-muted);">公開サイトでカードに LIKE が付くとここにランキング表示されます</span>
+      </div>
+    `;
+  }
+}
+
+function renderPodiumSlot(rank, item) {
+  const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉';
+  const rankClass = rank === 1 ? 'podium-1st' : rank === 2 ? 'podium-2nd' : 'podium-3rd';
+
+  if (!item) {
     return `
-      <div class="recent-card">
-        <img
-          src="${card.image_url}"
-          alt="${card.title}"
-          class="recent-card-img"
-          onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'120\' viewBox=\'0 0 200 120\'%3E%3Crect fill=\'%23F1F5F9\' width=\'200\' height=\'120\'/%3E%3Ctext fill=\'%2394A3B8\' font-size=\'20\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\'%3E📷%3C/text%3E%3C/svg%3E'"
-        />
-        <div class="recent-card-info">
-          <p class="recent-card-title">${card.title}</p>
-          <p class="recent-card-area">${cat ? (cat.emoji || '🏷️') + ' ' + cat.name : ''} · ${card.area}</p>
+      <div class="podium-item ${rankClass} podium-item--vacant">
+        <div class="podium-thumb podium-thumb--vacant">${medal}</div>
+        <p class="podium-title">—</p>
+        <span class="podium-like-count podium-like-count--vacant">—</span>
+        <div class="podium-pedestal">
+          <span class="podium-rank-num">${rank}</span>
         </div>
       </div>
     `;
-  }).join('');
+  }
+
+  const { card, likes } = item;
+  const cat = allCategories.find(c => c.id === card.category_id);
+  const fallback = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect fill='%23F1F5F9' width='120' height='120'/%3E%3Ctext fill='%2394A3B8' font-size='32' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E📷%3C/text%3E%3C/svg%3E";
+  const subtitle = cat ? `${cat.emoji || '🏷️'} ${cat.name}` : (card.area || '');
+
+  return `
+    <div class="podium-item ${rankClass}">
+      <div class="podium-medal" aria-hidden="true">${medal}</div>
+      <img
+        src="${card.image_url || fallback}"
+        alt="${card.title}"
+        class="podium-thumb"
+        onerror="this.src='${fallback}'"
+      />
+      <p class="podium-title" title="${card.title}">${card.title}</p>
+      <p class="podium-sub">${subtitle}</p>
+      <span class="podium-like-count">
+        <span class="podium-like-icon">♥</span>
+        <span>${likes}</span>
+      </span>
+      <div class="podium-pedestal">
+        <span class="podium-rank-num">${rank}</span>
+      </div>
+    </div>
+  `;
 }
