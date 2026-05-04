@@ -873,6 +873,69 @@ textarea.form-control {
     .podium-1st .podium-title { font-size: 0.86rem; }
 }
 
+/* ==================================================
+   カード管理：複合フィルター行
+   ================================================== */
+.card-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.card-filter-input {
+    flex: 1 1 220px;
+    min-width: 180px;
+    max-width: 320px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+}
+
+.card-filter-select {
+    width: auto;
+    min-width: 140px;
+    padding: 8px 32px 8px 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+/* アクティブ（'all' 以外）になったら強調 */
+.card-filter-select.is-active {
+    background-color: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    font-weight: 600;
+}
+
+.card-filter-select.is-active option {
+    background-color: #fff;
+    color: var(--text-primary);
+    font-weight: 400;
+}
+
+.card-filter-reset {
+    font-size: 0.8rem;
+    padding: 6px 14px;
+    visibility: hidden;
+}
+
+.card-filter-reset.is-visible {
+    visibility: visible;
+}
+
+@media (max-width: 700px) {
+    .card-filter-input {
+        flex-basis: 100%;
+        max-width: none;
+    }
+    .card-filter-select {
+        flex: 1 1 calc(50% - 5px);
+        min-width: 0;
+    }
+}
+
 /* トースト通知 */
 .toast {
     position: fixed;

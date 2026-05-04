@@ -5,6 +5,7 @@
 let allCards = [];
 let deleteTargetId = null;
 let sortState = { column: null, direction: 'asc' };
+let filterState = { keyword: '', area: 'all', staff: 'all', category: 'all' };
 
 document.addEventListener('DOMContentLoaded', async () => {
   // 1. 移行の実行
@@ -12,12 +13,128 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 2. データの初期化
   await initCards();
+  await populateAdminFilters();
   renderCardTable();
   bindEvents();
 
   // 3. バックグラウンドで不足している英語データを翻訳補完 (IndexedDB版)
   backgroundAutoTranslateDB();
 });
+
+// 現在の filterState を反映したカード集合
+function getDisplayedCards() {
+  const kw = (filterState.keyword || '').trim().toLowerCase();
+  return allCards.filter(card => {
+    if (filterState.area !== 'all' && (card.area || '') !== filterState.area) return false;
+    if (filterState.staff !== 'all' && (card.recommended_by || '').trim() !== filterState.staff) return false;
+    if (filterState.category !== 'all' && String(card.category_id) !== String(filterState.category)) return false;
+    if (kw) {
+      const blob = [
+        card.title, card.title_en,
+        card.description, card.description_en,
+        card.address, card.address_en,
+        card.area, card.recommended_by
+      ].filter(Boolean).join(' ').toLowerCase();
+      if (!blob.includes(kw)) return false;
+    }
+    return true;
+  });
+}
+
+function isFiltered() {
+  return !!filterState.keyword
+    || filterState.area !== 'all'
+    || filterState.staff !== 'all'
+    || filterState.category !== 'all';
+}
+
+// ドロップダウンの選択肢を生成（カード読み込み後に1回呼ぶ）
+async function populateAdminFilters() {
+  // ── 地域 ──
+  const customAreas = await machicaDB.getAll('areas');
+  const settings = await machicaDB.getAll('settings');
+  const editedAreas = settings.find(s => s.id === 'edited_areas')?.value || [];
+  const deletedAreaIds = settings.find(s => s.id === 'deleted_area_ids')?.value || [];
+  const baseAreas = (typeof AREAS_DATA !== 'undefined' ? AREAS_DATA : []).map(a => {
+    const ed = editedAreas.find(e => e.id === a.id);
+    return ed ? { ...a, ...ed } : a;
+  }).filter(a => !deletedAreaIds.includes(a.id) && a.id !== 99);
+  const seenAreaIds = new Set(baseAreas.map(a => a.id));
+  const allAreasMerged = [...baseAreas, ...customAreas.filter(c => !seenAreaIds.has(c.id))]
+    .sort((a, b) => (a.id || 0) - (b.id || 0));
+
+  const areaSel = document.getElementById('adminFilterArea');
+  if (areaSel) {
+    areaSel.innerHTML = '<option value="all">すべての地域</option>';
+    allAreasMerged.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a.name;
+      opt.textContent = a.name;
+      areaSel.appendChild(opt);
+    });
+  }
+
+  // ── ジャンル ──
+  const customCats = await machicaDB.getAll('categories');
+  const deletedCatIds = settings.find(s => s.id === 'deleted_category_ids')?.value || [];
+  const baseCats = (typeof CATEGORIES_DATA !== 'undefined' ? CATEGORIES_DATA : [])
+    .filter(c => !deletedCatIds.includes(c.id));
+  const seenCatIds = new Set(baseCats.map(c => c.id));
+  const allCatsMerged = [...baseCats, ...customCats.filter(c => !seenCatIds.has(c.id))]
+    .sort((a, b) => (a.id || 0) - (b.id || 0));
+
+  const catSel = document.getElementById('adminFilterCategory');
+  if (catSel) {
+    catSel.innerHTML = '<option value="all">すべてのジャンル</option>';
+    allCatsMerged.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = String(c.id);
+      opt.textContent = c.name;
+      catSel.appendChild(opt);
+    });
+  }
+
+  // ── スタッフ ──（カード上の recommended_by を集約）
+  const staffSel = document.getElementById('adminFilterStaff');
+  if (staffSel) {
+    const staffSet = new Set();
+    allCards.forEach(c => {
+      const v = (c.recommended_by || '').trim();
+      if (v) staffSet.add(v);
+    });
+    const staffList = [...staffSet].sort((a, b) => a.localeCompare(b, 'ja'));
+    staffSel.innerHTML = '<option value="all">すべてのスタッフ</option>';
+    staffList.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      staffSel.appendChild(opt);
+    });
+  }
+
+  refreshFilterUiState();
+}
+
+// アクティブな絞り込み状態を見た目に反映
+function refreshFilterUiState() {
+  const map = {
+    adminFilterArea: filterState.area,
+    adminFilterStaff: filterState.staff,
+    adminFilterCategory: filterState.category,
+  };
+  Object.entries(map).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('is-active', val !== 'all');
+    el.value = val;
+  });
+  const resetBtn = document.getElementById('adminFilterReset');
+  if (resetBtn) resetBtn.classList.toggle('is-visible', isFiltered());
+  const searchInput = document.getElementById('adminSearch');
+  if (searchInput && searchInput.value !== filterState.keyword) {
+    searchInput.value = filterState.keyword;
+  }
+}
 
 async function initCards() {
   // カスタムカードと設定情報を取得
@@ -61,14 +178,26 @@ function renderCardTable() {
   const label = document.getElementById('cardCountLabel');
   if (!tbody) return;
 
-  if (label) label.textContent = allCards.length;
+  const displayed = getDisplayedCards();
+  const filtered = isFiltered();
+  const dragEnabled = !filtered; // フィルター中は D&D を無効化（部分順序の混乱を避ける）
 
-  if (allCards.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:48px;color:var(--text-muted);">スポットが見つかりません</td></tr>`;
+  // 件数表示：フィルター中は「○件 / 全○件」、未フィルター時は単純な件数
+  if (label) {
+    label.textContent = filtered
+      ? `${displayed.length} / ${allCards.length}`
+      : String(allCards.length);
+  }
+
+  // 空状態
+  if (displayed.length === 0) {
+    const msg = filtered ? '条件に合うスポットがありません' : 'スポットが見つかりません';
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:48px;color:var(--text-muted);">${msg}</td></tr>`;
+    refreshFilterUiState();
     return;
   }
 
-  tbody.innerHTML = allCards.map(card => {
+  tbody.innerHTML = displayed.map(card => {
     const cat = getAllCategories().find(c => c.id === card.category_id);
     const area = card.area || '-';
     const recommender = card.recommended_by || '';
@@ -76,9 +205,13 @@ function renderCardTable() {
       ? `<span style="font-size:0.85rem;">${recommender}</span>`
       : `<span style="font-size:0.82rem;color:var(--text-muted);">—</span>`;
 
+    const handleAttrs = dragEnabled
+      ? 'title="ドラッグして並び替え"'
+      : 'title="フィルター解除後に並び替えできます" style="opacity:0.25;cursor:not-allowed;"';
+
     return `
-            <tr draggable="true" data-id="${card.id}">
-                <td class="drag-handle" title="ドラッグして並び替え">⋮⋮</td>
+            <tr ${dragEnabled ? 'draggable="true"' : ''} data-id="${card.id}">
+                <td class="drag-handle" ${handleAttrs}>⋮⋮</td>
                 <td>
                     <div class="card-thumb">
                         <img src="${card.image_url}" alt="" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'36\'%3E%3Crect fill=\'%23F1F5F9\' width=\'48\' height=\'36\'/%3E%3Ctext fill=\'%2394A3B8\' font-size=\'14\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\'%3E📷%3C/text%3E%3C/svg%3E'">
@@ -105,8 +238,9 @@ function renderCardTable() {
         `;
   }).join('');
 
-  setupRowDragAndDrop(tbody);
+  if (dragEnabled) setupRowDragAndDrop(tbody);
   updateSortIndicators();
+  refreshFilterUiState();
 }
 
 /**
@@ -194,14 +328,31 @@ function bindEvents() {
     }
   });
 
-  // 検索フィルタ
+  // 検索フィルタ（複数フィールド横断・他の絞り込みと AND）
   const searchInput = document.getElementById('cardSearch') || document.getElementById('adminSearch');
   searchInput?.addEventListener('input', (e) => {
-    const val = e.target.value.toLowerCase();
-    const rows = document.querySelectorAll('#adminCardTbody tr, #cardTbody tr');
-    rows.forEach(row => {
-      row.style.display = row.textContent.toLowerCase().includes(val) ? '' : 'none';
-    });
+    filterState.keyword = e.target.value;
+    renderCardTable();
+  });
+
+  // 地域・スタッフ・ジャンル
+  document.getElementById('adminFilterArea')?.addEventListener('change', (e) => {
+    filterState.area = e.target.value;
+    renderCardTable();
+  });
+  document.getElementById('adminFilterStaff')?.addEventListener('change', (e) => {
+    filterState.staff = e.target.value;
+    renderCardTable();
+  });
+  document.getElementById('adminFilterCategory')?.addEventListener('change', (e) => {
+    filterState.category = e.target.value;
+    renderCardTable();
+  });
+
+  // リセット
+  document.getElementById('adminFilterReset')?.addEventListener('click', () => {
+    filterState = { keyword: '', area: 'all', staff: 'all', category: 'all' };
+    renderCardTable();
   });
 
   // 列ヘッダークリックで並び替え

@@ -74,10 +74,19 @@
             <div class="table-section">
                 <div class="table-header">
                     <span class="table-title">スポット一覧 (<span id="cardCountLabel">0</span>件)</span>
-                    <div style="display:flex;gap:10px;align-items:center;">
-                        <input type="text" id="adminSearch" class="form-control" placeholder="検索…"
-                            style="width:200px;padding:8px 12px;font-size:0.85rem;" />
-                    </div>
+                </div>
+                <div class="card-filters">
+                    <input type="text" id="adminSearch" class="form-control card-filter-input" placeholder="🔍 名前・住所などで検索…" />
+                    <select id="adminFilterArea" class="form-control card-filter-select" aria-label="地域で絞り込み">
+                        <option value="all">すべての地域</option>
+                    </select>
+                    <select id="adminFilterStaff" class="form-control card-filter-select" aria-label="スタッフで絞り込み">
+                        <option value="all">すべてのスタッフ</option>
+                    </select>
+                    <select id="adminFilterCategory" class="form-control card-filter-select" aria-label="ジャンルで絞り込み">
+                        <option value="all">すべてのジャンル</option>
+                    </select>
+                    <button type="button" class="btn-secondary card-filter-reset" id="adminFilterReset">✕ リセット</button>
                 </div>
                 <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px;">
                     💡 列ヘッダーをクリックで昇順／降順に並び替え、<span style="display:inline-block;color:var(--text-secondary);font-weight:700;">⋮⋮</span> をドラッグで個別調整できます（公開サイトの表示順にも反映されます）。
