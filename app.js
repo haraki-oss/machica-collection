@@ -13,6 +13,7 @@ let state = {
     keyword: '',
     genre: 'all',
     area: 'all',
+    staff: 'all', // レコメンドスタッフ絞り込み
     lang: 'ja', // 'ja' or 'en'
     currentCard: null,
     map: null,
@@ -37,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await initCards();
     renderGenreButtons();
     populateAreaFilter();
+    populateStaffFilter();
     bindEvents();
     loadGoogleMapsAPI();
 });
@@ -132,6 +134,13 @@ function bindEvents() {
     document.getElementById('areaSelect')?.addEventListener('change', (e) => {
         state.area = e.target.value;
         syncAreaToUrl();
+        applyFilters();
+    });
+
+    // スタッフフィルター
+    document.getElementById('staffSelect')?.addEventListener('change', (e) => {
+        state.staff = e.target.value;
+        syncStaffToUrl();
         applyFilters();
     });
 
@@ -401,6 +410,7 @@ function updateLanguageUI() {
     // 再描画
     renderGenreButtons();
     populateAreaFilter();
+    populateStaffFilter();
     applyFilters();
     updateMyLikesUI();
 }
@@ -478,6 +488,73 @@ function syncAreaToUrl() {
     const newUrl = window.location.pathname + (qs ? '?' + qs : '') + window.location.hash;
     window.history.replaceState({}, '', newUrl);
     updateDocumentTitle();
+}
+
+// ── スタッフフィルター（レコメンドスタッフ） ─────────────
+let _staffUrlApplied = false;
+
+function populateStaffFilter() {
+    const select = document.getElementById('staffSelect');
+    if (!select) return;
+
+    // 全カードの recommended_by からユニークなスタッフ名を抽出
+    const staffSet = new Set();
+    state.cards.forEach(c => {
+        const name = (c.recommended_by || '').trim();
+        if (name) staffSet.add(name);
+    });
+    const staffList = [...staffSet].sort((a, b) => a.localeCompare(b, 'ja'));
+
+    const firstOpt = select.options[0]; // 「スタッフで絞り込み」を保持
+    if (firstOpt) {
+        firstOpt.textContent = state.lang === 'en' ? 'Filter by staff' : 'スタッフで絞り込み';
+    }
+    select.innerHTML = '';
+    if (firstOpt) select.appendChild(firstOpt);
+    staffList.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        select.appendChild(opt);
+    });
+
+    // 該当スタッフが居なくなったら状態をリセット
+    if (state.staff !== 'all' && !staffSet.has(state.staff)) {
+        state.staff = 'all';
+    }
+
+    // 初回のみ URL の ?staff= パラメータを反映
+    if (!_staffUrlApplied) {
+        const before = state.staff;
+        applyStaffFromUrl();
+        _staffUrlApplied = true;
+        if (state.staff !== before) applyFilters();
+    }
+    select.value = state.staff;
+}
+
+function applyStaffFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('staff');
+    if (!raw) return;
+    const v = decodeURIComponent(raw).trim().toLowerCase();
+    // カードに登録されているスタッフ名の中から大小無視で一致するものを採用
+    const match = state.cards.find(c =>
+        (c.recommended_by || '').trim().toLowerCase() === v
+    );
+    if (match) state.staff = match.recommended_by.trim();
+}
+
+function syncStaffToUrl() {
+    const params = new URLSearchParams(window.location.search);
+    if (!state.staff || state.staff === 'all') {
+        params.delete('staff');
+    } else {
+        params.set('staff', state.staff);
+    }
+    const qs = params.toString();
+    const newUrl = window.location.pathname + (qs ? '?' + qs : '') + window.location.hash;
+    window.history.replaceState({}, '', newUrl);
 }
 
 // 選択中のエリアに合わせて document.title を更新
@@ -605,7 +682,8 @@ function applyFilters() {
         const matchKeyword = !kw || card.title.toLowerCase().includes(kw) || card.description.toLowerCase().includes(kw);
         const matchGenre = state.genre === 'all' || card.category_id == state.genre;
         const matchArea = state.area === 'all' || card.area === state.area;
-        return matchKeyword && matchGenre && matchArea;
+        const matchStaff = state.staff === 'all' || (card.recommended_by || '').trim() === state.staff;
+        return matchKeyword && matchGenre && matchArea && matchStaff;
     });
 
     renderCards(state.filtered);
@@ -616,13 +694,17 @@ function resetFilters() {
     state.keyword = '';
     state.genre = 'all';
     state.area = 'all';
+    state.staff = 'all';
     document.getElementById('searchInput').value = '';
     document.getElementById('searchClear').classList.remove('visible');
     document.getElementById('areaSelect').value = 'all';
+    const staffSel = document.getElementById('staffSelect');
+    if (staffSel) staffSel.value = 'all';
     document.querySelectorAll('.genre-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.genre === 'all');
     });
     syncAreaToUrl();
+    syncStaffToUrl();
     applyFilters();
 }
 

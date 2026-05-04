@@ -62,11 +62,16 @@
     <!-- 検索・フィルターセクション -->
     <section class="filter-section">
         <div class="filter-inner">
-            <!-- キーワード検索 -->
-            <div class="search-box">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="searchInput" class="search-input" placeholder="スポット名・キーワードで検索…" />
-                <button class="search-clear" id="searchClear" aria-label="クリア">✕</button>
+            <!-- キーワード検索 + スタッフフィルター（縦積み） -->
+            <div class="search-stack">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" class="search-input" placeholder="スポット名・キーワードで検索…" />
+                    <button class="search-clear" id="searchClear" aria-label="クリア">✕</button>
+                </div>
+                <select class="staff-select" id="staffSelect" aria-label="スタッフで絞り込み">
+                    <option value="all">スタッフで絞り込み</option>
+                </select>
             </div>
             <!-- ジャンルフィルター -->
             <div class="genre-filters" id="genreFilters">
