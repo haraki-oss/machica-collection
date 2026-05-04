@@ -2,12 +2,22 @@
   "redirects": [
     {
       "source": "/machica-clip",
-      "destination": "/clip/",
+      "destination": "https://machica-clip.vercel.app/",
       "permanent": false
     },
     {
       "source": "/machica-clip/:path*",
-      "destination": "/clip/:path*",
+      "destination": "https://machica-clip.vercel.app/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/clip",
+      "destination": "https://machica-clip.vercel.app/",
+      "permanent": false
+    },
+    {
+      "source": "/clip/:path*",
+      "destination": "https://machica-clip.vercel.app/:path*",
       "permanent": false
     }
   ]

@@ -26,13 +26,9 @@ let state = {
 const GOOGLE_MAPS_API_KEY = '';
 
 // ── Machica Clip（別アプリ）連携 URL ──────────────
-// Machica Clip は別 Vercel プロジェクトとして分離されています。
+// Machica Clip は別の Vercel プロジェクト (haraki-oss/machica-clip) として独立稼働しています。
 // 末尾は `/` で終えてください（その後ろに `index.html#add?...` を連結します）。
-//
-// 本番デプロイ前のフォールバックとして、Collection と同居している `clip/` を使用しています。
-// 別 Vercel プロジェクトをデプロイしたら、この定数を絶対 URL に書き換えてください。
-//   例: const MACHICA_CLIP_URL = 'https://machica-clip.vercel.app/';
-const MACHICA_CLIP_URL = 'clip/';
+const MACHICA_CLIP_URL = 'https://machica-clip.vercel.app/';
 
 // ── 初期化 ────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
