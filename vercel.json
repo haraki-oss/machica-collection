@@ -1,0 +1,14 @@
+{
+  "redirects": [
+    {
+      "source": "/machica-clip",
+      "destination": "/clip/",
+      "permanent": false
+    },
+    {
+      "source": "/machica-clip/:path*",
+      "destination": "/clip/:path*",
+      "permanent": false
+    }
+  ]
+}
