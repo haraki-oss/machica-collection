@@ -73,7 +73,7 @@ function renderCardTable() {
     const area = card.area || '-';
     const recommender = card.recommended_by || '';
     const recommenderHtml = recommender
-      ? `<span class="recommender-chip">⭐ ${recommender}</span>`
+      ? `<span style="font-size:0.85rem;">${recommender}</span>`
       : `<span style="font-size:0.82rem;color:var(--text-muted);">—</span>`;
 
     return `
