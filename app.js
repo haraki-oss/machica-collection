@@ -25,6 +25,15 @@ let state = {
 // ── Google Maps APIキー ──────────────────────────
 const GOOGLE_MAPS_API_KEY = '';
 
+// ── Machica Clip（別アプリ）連携 URL ──────────────
+// Machica Clip は別 Vercel プロジェクトとして分離されています。
+// 末尾は `/` で終えてください（その後ろに `index.html#add?...` を連結します）。
+//
+// 本番デプロイ前のフォールバックとして、Collection と同居している `clip/` を使用しています。
+// 別 Vercel プロジェクトをデプロイしたら、この定数を絶対 URL に書き換えてください。
+//   例: const MACHICA_CLIP_URL = 'https://machica-clip.vercel.app/';
+const MACHICA_CLIP_URL = 'clip/';
+
 // ── 初期化 ────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
     // 移行の実行（公開側でも初回アクセス時に必要）
@@ -176,9 +185,9 @@ function bindEvents() {
         const imageUrl = encodeURIComponent(card.image_url || '');
         const encodedTitle = encodeURIComponent(title);
 
-        // Machica Clip は Collection と同じデプロイ配下 (/clip/) にある。
-        // 相対パスにしておくとローカル / Vercel preview / production で同じく動く。
-        const clipUrl = `clip/index.html#add?card_id=${card.id}&title=${encodedTitle}&image=${imageUrl}`;
+        // 連携先は MACHICA_CLIP_URL 定数（最上部）で設定。相対 / 絶対どちらでも可。
+        const base = MACHICA_CLIP_URL.endsWith('/') ? MACHICA_CLIP_URL : MACHICA_CLIP_URL + '/';
+        const clipUrl = `${base}index.html#add?card_id=${card.id}&title=${encodedTitle}&image=${imageUrl}`;
 
         window.location.href = clipUrl;
     });
