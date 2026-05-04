@@ -94,25 +94,58 @@ async function populateAdminFilters() {
     });
   }
 
-  // ── スタッフ ──（カード上の recommended_by を集約）
-  const staffSel = document.getElementById('adminFilterStaff');
-  if (staffSel) {
-    const staffSet = new Set();
-    allCards.forEach(c => {
-      const v = (c.recommended_by || '').trim();
-      if (v) staffSet.add(v);
-    });
-    const staffList = [...staffSet].sort((a, b) => a.localeCompare(b, 'ja'));
-    staffSel.innerHTML = '<option value="all">すべてのスタッフ</option>';
-    staffList.forEach(name => {
-      const opt = document.createElement('option');
-      opt.value = name;
-      opt.textContent = name;
-      staffSel.appendChild(opt);
-    });
-  }
+  // ── スタッフ ──（renderCardTable から都度再構築）
+  rebuildStaffOptions();
 
   refreshFilterUiState();
+}
+
+/**
+ * スタッフ用ドロップダウンを「他のフィルター条件に合致するカードに登録されているスタッフ」だけ
+ * 表示するよう再構築する。スタッフ自身の絞り込みは除外して文脈を作る。
+ * 例: 地域=旭川, ジャンル=観光 → そのカードに居るスタッフのみが選択肢に出る。
+ *
+ * 現在選択中のスタッフは、たとえ文脈外でもオプションに残す（外したつもりが残っていた等の混乱を防ぐ）。
+ */
+function rebuildStaffOptions() {
+  const staffSel = document.getElementById('adminFilterStaff');
+  if (!staffSel) return;
+
+  const ctxKw = (filterState.keyword || '').trim().toLowerCase();
+  const contextCards = allCards.filter(card => {
+    if (filterState.area !== 'all' && (card.area || '') !== filterState.area) return false;
+    if (filterState.category !== 'all' && String(card.category_id) !== String(filterState.category)) return false;
+    if (ctxKw) {
+      const blob = [
+        card.title, card.title_en,
+        card.description, card.description_en,
+        card.address, card.address_en,
+        card.area, card.recommended_by
+      ].filter(Boolean).join(' ').toLowerCase();
+      if (!blob.includes(ctxKw)) return false;
+    }
+    return true;
+  });
+
+  const staffSet = new Set();
+  contextCards.forEach(c => {
+    const v = (c.recommended_by || '').trim();
+    if (v) staffSet.add(v);
+  });
+  // 現在選択中のスタッフが文脈外でも残す
+  if (filterState.staff !== 'all') staffSet.add(filterState.staff);
+
+  const staffList = [...staffSet].sort((a, b) => a.localeCompare(b, 'ja'));
+  const baseLabel = staffList.length === 0 ? 'スタッフが登録されていません' : 'すべてのスタッフ';
+
+  staffSel.innerHTML = `<option value="all">${baseLabel}</option>`;
+  staffList.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    staffSel.appendChild(opt);
+  });
+  staffSel.value = filterState.staff;
 }
 
 // アクティブな絞り込み状態を見た目に反映
@@ -193,6 +226,7 @@ function renderCardTable() {
   if (displayed.length === 0) {
     const msg = filtered ? '条件に合うスポットがありません' : 'スポットが見つかりません';
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:48px;color:var(--text-muted);">${msg}</td></tr>`;
+    rebuildStaffOptions();
     refreshFilterUiState();
     return;
   }
@@ -240,6 +274,7 @@ function renderCardTable() {
 
   if (dragEnabled) setupRowDragAndDrop(tbody);
   updateSortIndicators();
+  rebuildStaffOptions();
   refreshFilterUiState();
 }
 
