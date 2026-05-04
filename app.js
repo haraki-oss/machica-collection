@@ -518,13 +518,14 @@ function populateStaffFilter() {
         select.appendChild(opt);
     });
 
-    // 該当スタッフが居なくなったら状態をリセット
-    if (state.staff !== 'all' && !staffSet.has(state.staff)) {
+    // 該当スタッフが居なくなったら状態をリセット（ただし state.cards 未ロード時は触らない）
+    if (state.cards.length > 0 && state.staff !== 'all' && !staffSet.has(state.staff)) {
         state.staff = 'all';
     }
 
-    // 初回のみ URL の ?staff= パラメータを反映
-    if (!_staffUrlApplied) {
+    // 初回のみ URL の ?staff= パラメータを反映。
+    // state.cards が空のうちに走らせるとマッチが取れないので、データ到着まで先送りする。
+    if (!_staffUrlApplied && state.cards.length > 0) {
         const before = state.staff;
         applyStaffFromUrl();
         _staffUrlApplied = true;
