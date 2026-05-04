@@ -3,6 +3,9 @@
  */
 let allCards = [];
 let allCategories = [];
+let allAreas = [];
+let likesMap = {};
+let currentAreaFilter = 'all'; // 地域フィルタ。'all' は全地域
 
 document.addEventListener('DOMContentLoaded', async () => {
   // 1. データの同期
@@ -16,11 +19,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   allCards = [...customCards, ...mocks];
   allCategories = await getAllCategoriesAsync();
+  allAreas = await getAllAreasAsync();
+  likesMap = settings.find(s => s.id === 'card_likes')?.value || {};
 
-  // 3. 表示
-  renderStats();
-  renderGenreStats();
-  renderTopLiked();
+  // 3. 地域フィルタ UI 初期化
+  initAreaFilter();
+
+  // 4. 表示
+  renderAll();
 });
 
 async function getAllCategoriesAsync() {
@@ -31,11 +37,57 @@ async function getAllCategoriesAsync() {
   return [...categories, ...customCats];
 }
 
-function renderStats() {
-  const areas = new Set(allCards.map(c => c.area));
-  const withImg = allCards.filter(c => c.image_url).length;
+async function getAllAreasAsync() {
+  const customAreas = await machicaDB.getAll('areas');
+  const settings = await machicaDB.getAll('settings');
+  const editedAreas = settings.find(s => s.id === 'edited_areas')?.value || [];
+  const deletedIds = settings.find(s => s.id === 'deleted_area_ids')?.value || [];
+  const defaults = (typeof AREAS_DATA !== 'undefined' ? AREAS_DATA : []).map(a => {
+    const edited = editedAreas.find(e => e.id === a.id);
+    return edited ? { ...a, ...edited } : a;
+  }).filter(a => !deletedIds.includes(a.id));
+  // ID / 名前で重複排除
+  const seenIds = new Set(defaults.map(a => a.id));
+  const merged = [...defaults, ...customAreas.filter(c => !seenIds.has(c.id))];
+  return merged.sort((a, b) => (a.id || 0) - (b.id || 0));
+}
 
-  document.getElementById('statTotal').textContent = allCards.length;
+function initAreaFilter() {
+  const select = document.getElementById('areaFilterSelect');
+  if (!select) return;
+
+  const opts = ['<option value="all">すべての地域</option>'];
+  allAreas.forEach(a => {
+    if (a.id === 99) return; // 「全国」はフィルタ用途では除外
+    const safeName = String(a.name).replace(/"/g, '&quot;');
+    opts.push(`<option value="${safeName}">${a.name}</option>`);
+  });
+  select.innerHTML = opts.join('');
+
+  select.addEventListener('change', (e) => {
+    currentAreaFilter = e.target.value;
+    renderAll();
+  });
+}
+
+// 現在の地域フィルタを反映したカード集合を返す
+function getFilteredCards() {
+  if (currentAreaFilter === 'all') return allCards;
+  return allCards.filter(c => c.area === currentAreaFilter);
+}
+
+function renderAll() {
+  renderStats();
+  renderGenreStats();
+  renderTopLiked();
+}
+
+function renderStats() {
+  const cards = getFilteredCards();
+  const areas = new Set(cards.map(c => c.area).filter(Boolean));
+  const withImg = cards.filter(c => c.image_url).length;
+
+  document.getElementById('statTotal').textContent = cards.length;
   document.getElementById('statAreas').textContent = areas.size;
   document.getElementById('statWithImg').textContent = withImg;
 }
@@ -44,9 +96,10 @@ function renderGenreStats() {
   const container = document.getElementById('genreStats');
   if (!container) return;
 
+  const cards = getFilteredCards();
   const html = allCategories.map(cat => {
-    const count = allCards.filter(c => c.category_id === cat.id).length;
-    const pct = allCards.length > 0 ? Math.round((count / allCards.length) * 100) : 0;
+    const count = cards.filter(c => c.category_id === cat.id).length;
+    const pct = cards.length > 0 ? Math.round((count / cards.length) * 100) : 0;
     const iconHtml = cat.icon_url
       ? `<img src="${cat.icon_url}" alt="${cat.name}" style="width:20px;height:20px;object-fit:contain;" />`
       : `<span>${cat.emoji || '🏷️'}</span>`;
@@ -68,16 +121,12 @@ function renderGenreStats() {
   container.innerHTML = html;
 }
 
-async function renderTopLiked() {
+function renderTopLiked() {
   const container = document.getElementById('topLikedPodium');
   if (!container) return;
 
-  // LIKE 数マップを取得（公開サイトと同じく settings.card_likes に保存されている）
-  const settings = await machicaDB.getAll('settings');
-  const likesMap = settings.find(s => s.id === 'card_likes')?.value || {};
-
-  // 各カードに likes を付与してソート
-  const ranked = allCards
+  // 地域フィルタを反映したカードに、初回ロード時に取得した likes マップを付与してソート
+  const ranked = getFilteredCards()
     .map(c => ({ card: c, likes: Number(likesMap[String(c.id)] || 0) }))
     .filter(x => x.likes > 0)
     .sort((a, b) => b.likes - a.likes)

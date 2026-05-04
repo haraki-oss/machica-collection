@@ -604,6 +604,74 @@ textarea.form-control {
 }
 
 /* ==================================================
+   ダッシュボード：地域フィルター
+   ================================================== */
+.page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.dashboard-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 8px 14px;
+    box-shadow: var(--shadow-sm);
+}
+
+.dashboard-filter-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.dashboard-filter-select {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 32px 6px 14px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--bg-white)
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%231E1B19' d='M1.4 0L6 4.6 10.6 0 12 1.4 6 7.4 0 1.4z'/%3E%3C/svg%3E")
+        no-repeat right 12px center;
+    background-size: 10px 7px;
+    cursor: pointer;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    min-width: 160px;
+}
+
+.dashboard-filter-select:hover {
+    border-color: var(--primary);
+}
+
+.dashboard-filter-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(30, 27, 25, 0.08);
+}
+
+@media (max-width: 600px) {
+    .dashboard-filter {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .dashboard-filter-select {
+        flex: 1;
+    }
+}
+
+/* ==================================================
    ダッシュボード：LIKE数ベスト3 表彰台
    ================================================== */
 .podium {
