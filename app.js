@@ -71,8 +71,10 @@ async function initCards() {
         return b.id - a.id;
     });
 
-    state.filtered = [...state.cards];
-    renderCards(state.filtered);
+    // 直接 state.filtered を全件で上書きすると ?area= で先に設定された state.area
+    // を無視して全カードを描画してしまう（fill→filter の競合）。applyFilters を
+    // 通すことで現在の state.area / state.genre / state.keyword に従わせる。
+    applyFilters();
 
     // URLパラメータのチェック（地図からの遷移など）
     const params = new URLSearchParams(window.location.search);
@@ -146,6 +148,23 @@ function bindEvents() {
 
     // シェアボタン
     document.getElementById('shareBtn')?.addEventListener('click', shareCard);
+
+    // クリップボタン（Machica Clip 連携）
+    document.getElementById('clipBtn')?.addEventListener('click', () => {
+        const card = state.currentCard;
+        if (!card) return;
+
+        const lang = state.lang;
+        const title = (lang === 'en' && card.title_en) ? card.title_en : card.title;
+        const imageUrl = encodeURIComponent(card.image_url || '');
+        const encodedTitle = encodeURIComponent(title);
+
+        // Machica Clip アプリへのパス
+        // 同一サーバー内の別ディレクトリを想定（../machica-clip/）
+        const clipUrl = `../machica-clip/index.html#add?card_id=${card.id}&title=${encodedTitle}&image=${imageUrl}`;
+
+        window.location.href = clipUrl;
+    });
 
     // ハンバーガーメニュー
     document.getElementById('hamburgerBtn')?.addEventListener('click', () => {
@@ -369,6 +388,14 @@ function updateLanguageUI() {
             'aria-label',
             state.lang === 'en' ? 'Close MY LIKES' : 'MY LIKES を閉じる'
         );
+    }
+
+    // クリップボタン
+    const clipBtn = document.getElementById('clipBtn');
+    if (clipBtn) {
+        clipBtn.innerHTML = state.lang === 'en' 
+            ? '<span>📎</span> Clip to App' 
+            : '<span>📎</span> クリップに追加';
     }
 
     // 再描画

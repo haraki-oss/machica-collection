@@ -1443,6 +1443,31 @@ a.bi-row:hover {
     transform: translateY(-2px);
 }
 
+.btn-clip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 24px;
+    background: #417f96;
+    color: #fff;
+    border-radius: var(--radius-md);
+    font-size: 0.93rem;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all var(--transition);
+    flex: 1;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 4px 14px rgba(65, 127, 150, 0.3);
+}
+
+.btn-clip:hover {
+    background: #356a7e;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(65, 127, 150, 0.35);
+}
+
 /* =====================================================
    フッター
    ===================================================== */
