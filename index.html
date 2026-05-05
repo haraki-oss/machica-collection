@@ -150,11 +150,17 @@
                 <div class="modal-meta">
                     <span class="modal-area" id="modalArea"></span>
                     <span class="modal-recommender" id="modalRecommender"></span>
-                    <button class="like-btn like-btn--compact" id="likeBtn" type="button" aria-label="このスポットをLIKE" aria-pressed="false">
-                        <span class="like-icon">♡</span>
-                        <span class="like-label">LIKE</span>
-                        <span class="like-count" id="likeCount">0</span>
-                    </button>
+                    <div class="modal-meta-actions" id="metaActions">
+                        <button class="like-btn like-btn--compact" id="likeBtn" type="button" aria-label="このスポットをLIKE" aria-pressed="false">
+                            <span class="like-icon">♡</span>
+                            <span class="like-label">LIKE</span>
+                            <span class="like-count" id="likeCount">0</span>
+                        </button>
+                        <button class="btn-clip btn-clip--compact" id="clipBtn" type="button" aria-label="クリップに保存">
+                            <span class="btn-clip-icon">📎</span>
+                            <span class="btn-clip-label">クリップに保存</span>
+                        </button>
+                    </div>
                 </div>
                 <h2 class="modal-title" id="modalTitle"></h2>
                 <p class="modal-description" id="modalDescription"></p>
@@ -178,9 +184,6 @@
                     <a href="#" class="btn-primary" id="routeBtn" target="_blank" rel="noopener">
                         <span>📍</span> Google Mapsで見る
                     </a>
-                    <button class="btn-clip" id="clipBtn">
-                        <span>📎</span> クリップに追加
-                    </button>
                     <button class="btn-secondary" id="shareBtn">
                         <span>📤</span> シェアする
                     </button>

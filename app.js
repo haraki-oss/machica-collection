@@ -412,12 +412,18 @@ function updateLanguageUI() {
         );
     }
 
-    // クリップボタン
+    // クリップボタン（LIKE 横の compact 版に合わせてラベル要素を維持したまま差し替え）
     const clipBtn = document.getElementById('clipBtn');
     if (clipBtn) {
-        clipBtn.innerHTML = state.lang === 'en' 
-            ? '<span>📎</span> Clip to App' 
-            : '<span>📎</span> クリップに追加';
+        const labelEl = clipBtn.querySelector('.btn-clip-label');
+        const ariaLabel = state.lang === 'en' ? 'Save to Clip' : 'クリップに保存';
+        const labelText = state.lang === 'en' ? 'Save to Clip' : 'クリップに保存';
+        if (labelEl) {
+            labelEl.textContent = labelText;
+        } else {
+            clipBtn.innerHTML = `<span class="btn-clip-icon">📎</span><span class="btn-clip-label">${labelText}</span>`;
+        }
+        clipBtn.setAttribute('aria-label', ariaLabel);
     }
 
     // 再描画
@@ -1086,6 +1092,8 @@ async function setupLikeButton(card) {
     btn.parentNode.replaceChild(fresh, btn);
     const countEl = fresh.querySelector('.like-count');
     const iconEl = fresh.querySelector('.like-icon');
+    // LIKE+クリップを束ねるラッパー。.show-clip でクリップを出現させる
+    const cluster = document.getElementById('metaActions');
 
     // 表示反映ヘルパ
     function applyState(isLiked, count) {
@@ -1093,13 +1101,20 @@ async function setupLikeButton(card) {
         fresh.setAttribute('aria-pressed', isLiked ? 'true' : 'false');
         iconEl.textContent = isLiked ? '♥' : '♡';
         countEl.textContent = count;
+        if (cluster) cluster.classList.toggle('show-clip', isLiked);
     }
 
-    // 初期状態
+    // 初期状態（モーダルが見える前にここで .show-clip を確定させて、
+    // 出現アニメを誤発火させない）
     let liked = getLocalLiked().has(cardKey);
     countEl.textContent = '…';
     fresh.classList.toggle('is-liked', liked);
     iconEl.textContent = liked ? '♥' : '♡';
+    if (cluster) {
+        cluster.classList.remove('just-revealed');
+        cluster.classList.toggle('show-clip', liked);
+        // 直後にカウント反映で applyState が走るが、すでに同じ値なのでアニメは発火しない
+    }
 
     // Supabase から最新カウントを取得
     const likesMap = await fetchLikesMap();
@@ -1120,6 +1135,11 @@ async function setupLikeButton(card) {
         if (goingToLike) {
             fresh.classList.add('is-pulsing');
             setTimeout(() => fresh.classList.remove('is-pulsing'), 500);
+            // クリップボタンを注目アニメ付きで出現させる
+            if (cluster) {
+                cluster.classList.add('just-revealed');
+                setTimeout(() => cluster.classList.remove('just-revealed'), 1700);
+            }
         }
 
         try {
