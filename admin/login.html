@@ -10,8 +10,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             background: var(--bg-soft);
+            margin: 0;
         }
         .login-card {
             background: var(--bg-white);
@@ -38,13 +39,29 @@
         }
         .form-group {
             text-align: left;
-            margin-bottom: 24px;
+            margin-bottom: 18px;
         }
         #loginError {
             color: #EF4444;
             font-size: 0.85rem;
+            margin-top: 12px;
+            min-height: 1.2em;
+        }
+        .login-actions {
             margin-top: 8px;
-            display: none;
+        }
+        .login-actions .btn-primary {
+            width: 100%;
+            justify-content: center;
+            padding: 12px;
+        }
+        .forgot-link {
+            display: inline-block;
+            margin-top: 14px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-decoration: underline;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -54,32 +71,137 @@
             <span>🗾</span> machica
         </div>
         <div class="login-subtitle">管理画面ログイン</div>
-        
+
         <form id="loginForm">
             <div class="form-group">
-                <label class="form-label" for="password">パスワード</label>
-                <input type="password" id="password" class="form-control" placeholder="パスワードを入力" required />
-                <div id="loginError">パスワードが間違っています。</div>
+                <label class="form-label" for="email">メールアドレス</label>
+                <input type="email" id="email" class="form-control" placeholder="admin@example.com" autocomplete="username" required />
             </div>
-            <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px;">ログイン</button>
+            <div class="form-group">
+                <label class="form-label" for="password">パスワード</label>
+                <input type="password" id="password" class="form-control" placeholder="パスワード" autocomplete="current-password" required />
+            </div>
+            <div id="loginError"></div>
+            <div class="login-actions">
+                <button type="submit" id="loginSubmit" class="btn-primary">ログイン</button>
+            </div>
         </form>
+        <a class="forgot-link" id="forgotLink">パスワードを忘れた場合</a>
     </div>
 
-    <script src="auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="admin-config.js"></script>
+    <script src="supabase-config.js"></script>
     <script>
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+    (function () {
+        const SUPABASE_REF = 'tzkzsucrgifrxnbxwdlq';
+        const STORAGE_KEY = `sb-${SUPABASE_REF}-auth-token`;
+        const adminEmails = (window.ADMIN_EMAILS || []).map(e => String(e).toLowerCase());
+
+        // 既ログインなら即遷移（auth.js と同じ判定）
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                const valid = parsed?.user && (!parsed.expires_at || parsed.expires_at * 1000 > Date.now());
+                const email = String(parsed?.user?.email || '').toLowerCase();
+                if (valid && (!adminEmails.length || adminEmails.includes(email))) {
+                    redirectAfterLogin();
+                    return;
+                }
+            }
+        } catch (_) {}
+
+        const form = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const errorEl = document.getElementById('loginError');
+        const submitBtn = document.getElementById('loginSubmit');
+        const forgotLink = document.getElementById('forgotLink');
+
+        function showError(msg) {
+            errorEl.textContent = msg || '';
+        }
+
+        function redirectAfterLogin() {
+            const returnTo = sessionStorage.getItem('machica_admin_return_to');
+            sessionStorage.removeItem('machica_admin_return_to');
+            const safe = returnTo && /^[a-zA-Z0-9_\-]+\.html(\?.*)?(#.*)?$/.test(returnTo) && !returnTo.startsWith('login.html')
+                ? returnTo
+                : 'index.html';
+            window.location.href = safe;
+        }
+
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const password = document.getElementById('password').value;
-            // パスワードは「admin」に設定しています
-            if (password === 'admin') {
-                sessionStorage.setItem('machica_admin_logged_in', 'true');
-                // 元々アクセスしようとしていたページがあればそこに遷移させることも可能ですが
-                // 今回はシンプルにダッシュボードへ
-                window.location.href = 'index.html';
-            } else {
-                document.getElementById('loginError').style.display = 'block';
+            showError('');
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            if (!email || !password) return;
+
+            // ホワイトリストチェックを先にして、不要なリクエストを防ぐ
+            if (adminEmails.length && !adminEmails.includes(email.toLowerCase())) {
+                showError('このアカウントには管理画面へのアクセス権がありません。');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = '処理中...';
+            try {
+                // signInWithPassword は SDK のバージョン/環境によって稀にハングするので
+                // SIGNED_IN イベント or 8s タイムアウトと race する（Clip と同じ実装）。
+                const callPromise = supabaseClient.auth.signInWithPassword({ email, password });
+                const eventPromise = new Promise((resolve) => {
+                    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((ev, sess) => {
+                        if (ev === 'SIGNED_IN' && sess) {
+                            try { subscription?.unsubscribe(); } catch (_) {}
+                            resolve({ data: { user: sess.user, session: sess }, error: null });
+                        }
+                    });
+                });
+                const timeoutPromise = new Promise((resolve) =>
+                    setTimeout(() => resolve({ data: null, error: { message: 'login timeout' } }), 8000)
+                );
+                const { data, error } = await Promise.race([callPromise, eventPromise, timeoutPromise]);
+
+                if (error) {
+                    if (/Invalid login credentials/i.test(error.message)) {
+                        showError('メールアドレスまたはパスワードが正しくありません。');
+                    } else if (/timeout/i.test(error.message)) {
+                        showError('サーバー応答がタイムアウトしました。再試行してください。');
+                    } else {
+                        showError('ログインに失敗しました: ' + error.message);
+                    }
+                    return;
+                }
+
+                redirectAfterLogin();
+            } catch (err) {
+                showError('エラーが発生しました: ' + (err?.message || err));
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'ログイン';
             }
         });
+
+        forgotLink.addEventListener('click', async () => {
+            const email = emailInput.value.trim();
+            if (!email) {
+                showError('メールアドレスを入力してから「パスワードを忘れた場合」を押してください。');
+                return;
+            }
+            if (!confirm(`${email} にパスワード再設定メールを送信しますか？`)) return;
+            try {
+                const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                    redirectTo: window.location.origin + '/admin/login.html',
+                });
+                if (error) throw error;
+                alert('再設定メールを送信しました。メールボックスを確認してください。');
+            } catch (err) {
+                showError('再設定メール送信に失敗しました: ' + (err?.message || err));
+            }
+        });
+    })();
     </script>
 </body>
 </html>
