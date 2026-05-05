@@ -90,22 +90,19 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="admin-config.js"></script>
     <script src="supabase-config.js"></script>
     <script>
     (function () {
         const SUPABASE_REF = 'tzkzsucrgifrxnbxwdlq';
         const STORAGE_KEY = `sb-${SUPABASE_REF}-auth-token`;
-        const adminEmails = (window.ADMIN_EMAILS || []).map(e => String(e).toLowerCase());
 
-        // 既ログインなら即遷移（auth.js と同じ判定）
+        // 既ログインなら即遷移（管理者判定はダッシュボード側で is_admin() を確認）
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
             if (raw) {
                 const parsed = JSON.parse(raw);
                 const valid = parsed?.user && (!parsed.expires_at || parsed.expires_at * 1000 > Date.now());
-                const email = String(parsed?.user?.email || '').toLowerCase();
-                if (valid && (!adminEmails.length || adminEmails.includes(email))) {
+                if (valid) {
                     redirectAfterLogin();
                     return;
                 }
@@ -139,12 +136,6 @@
             const password = passwordInput.value;
             if (!email || !password) return;
 
-            // ホワイトリストチェックを先にして、不要なリクエストを防ぐ
-            if (adminEmails.length && !adminEmails.includes(email.toLowerCase())) {
-                showError('このアカウントには管理画面へのアクセス権がありません。');
-                return;
-            }
-
             submitBtn.disabled = true;
             submitBtn.textContent = '処理中...';
             try {
@@ -172,6 +163,32 @@
                     } else {
                         showError('ログインに失敗しました: ' + error.message);
                     }
+                    return;
+                }
+
+                // 認証成功後に管理者であることを確認する。
+                // admin_users に登録されていなければ即サインアウトして弾く。
+                try {
+                    const adminCallP = supabaseClient.rpc('is_admin');
+                    const adminTimeoutP = new Promise((resolve) =>
+                        setTimeout(() => resolve({ data: null, error: { message: 'is_admin timeout' } }), 6000)
+                    );
+                    const { data: isAdmin, error: adminError } =
+                        await Promise.race([adminCallP, adminTimeoutP]);
+                    if (adminError) {
+                        showError('管理者判定に失敗しました: ' + adminError.message);
+                        try { await supabaseClient.auth.signOut(); } catch (_) {}
+                        return;
+                    }
+                    if (isAdmin !== true) {
+                        showError('このアカウントには管理画面へのアクセス権がありません。');
+                        try { await supabaseClient.auth.signOut(); } catch (_) {}
+                        try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+                        return;
+                    }
+                } catch (e) {
+                    showError('管理者判定でエラーが発生しました: ' + (e?.message || e));
+                    try { await supabaseClient.auth.signOut(); } catch (_) {}
                     return;
                 }
 

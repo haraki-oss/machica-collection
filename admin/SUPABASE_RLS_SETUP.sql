@@ -236,13 +236,29 @@ create policy images_admin_delete
 -- ============================================================
 -- 管理者の追加 / 削除（運用メモ）
 -- ============================================================
+-- フロント側にホワイトリストは無く、admin_users テーブルが
+-- 唯一の管理者リストとして機能する（コード変更・デプロイ不要）。
+--
 -- 追加:
---   1) Authentication → Users で新しい admin アカウントを作成
---   2) admin/admin-config.js の ADMIN_EMAILS にメールを追加して push
---   3) ここで insert:
+--   1) Authentication → Users → "Add user" → "Create new user"
+--      Email: NEW@example.com
+--      Password: 強い一時パスワード
+--      "Auto Confirm User" にチェック
+--   2) ここで insert:
 --      insert into public.admin_users (user_id, email, note)
---      select id, email, 'note' from auth.users where email = 'NEW@example.com';
+--      select id, email, '担当者: 田中'
+--      from auth.users where email = 'NEW@example.com';
+--   3) 新管理者にメール+一時パスワードを伝える。
+--      ログイン後、トップバー右上「アカウント → パスワードを変更」で
+--      本人のパスワードに差し替えてもらう。
 --
 -- 削除:
 --   delete from public.admin_users where email = 'OLD@example.com';
---   （admin/admin-config.js からも削除して push）
+--   -- 必要なら auth.users 側のアカウントも削除:
+--   -- Authentication → Users で対象行を Delete user
+--
+-- 確認:
+--   select au.email, au.note, au.created_at, u.last_sign_in_at
+--   from public.admin_users au
+--   left join auth.users u on u.id = au.user_id
+--   order by au.created_at;

@@ -1,4 +1,6 @@
 // 管理画面トップバーにアカウントメニュー（ログアウト・パスワード変更）を注入する。
+// あわせて、現在のセッションが admin_users テーブルに登録されているかを
+// is_admin() RPC で非同期検証し、未登録ならログインページへ強制送還する。
 // すべての管理ページで supabase-config.js のあとに読み込まれる前提。
 (function () {
     if (window.location.pathname.endsWith('login.html')) return;
@@ -9,6 +11,31 @@
 
     const SUPABASE_REF = 'tzkzsucrgifrxnbxwdlq';
     const STORAGE_KEY = `sb-${SUPABASE_REF}-auth-token`;
+
+    // is_admin() RPC でサーバー側に管理者判定を確認する。
+    // ネットワーク失敗時は誤って弾かないよう、ログだけ残して通す（書き込みは
+    // どのみち RLS に阻まれる）。明示的に false を受け取った場合のみ強制ログアウト。
+    async function verifyAdminAsync() {
+        try {
+            const callP = supabaseClient.rpc('is_admin');
+            const timeoutP = new Promise((resolve) =>
+                setTimeout(() => resolve({ data: null, error: { message: 'is_admin timeout' } }), 6000)
+            );
+            const { data, error } = await Promise.race([callP, timeoutP]);
+            if (error) {
+                console.warn('[admin-account] is_admin check failed (allowing through):', error.message);
+                return;
+            }
+            if (data === false) {
+                try { await supabaseClient.auth.signOut(); } catch (_) {}
+                try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+                alert('このアカウントには管理画面へのアクセス権がありません。');
+                window.location.href = 'login.html';
+            }
+        } catch (e) {
+            console.warn('[admin-account] is_admin check threw (allowing through):', e);
+        }
+    }
 
     function injectStyles() {
         if (document.getElementById('admin-account-styles')) return;
@@ -179,6 +206,9 @@
         const session = window.adminSession;
         if (!session || !session.user) return;
         const email = session.user.email;
+
+        // 管理者判定をサーバー側に問い合わせる（バックグラウンドで進行）
+        verifyAdminAsync();
 
         injectStyles();
 

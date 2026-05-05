@@ -1,13 +1,14 @@
-// 管理画面の認証ガード
+// 管理画面の認証ガード（同期チェック部分）
 // supabase-js のロード前に <head> で同期実行されるため、
-// localStorage の sb-<ref>-auth-token を直接読んで判定する（Clip と同じパターン）。
-// 真のセキュリティは Supabase 側の RLS が担う。これはあくまで UX 上のガード。
+// localStorage の sb-<ref>-auth-token を直接読んでセッション存在のみ判定する。
+// 「管理者かどうか」の本判定は admin-account.js が supabase-js ロード後に
+// is_admin() RPC で行う。RLS が真のセキュリティを担保しているため、
+// このフロントの判定はあくまで UX 上のガード。
 (function () {
     if (window.location.pathname.endsWith('login.html')) return;
 
     const SUPABASE_REF = 'tzkzsucrgifrxnbxwdlq';
     const STORAGE_KEY = `sb-${SUPABASE_REF}-auth-token`;
-    const adminEmails = (window.ADMIN_EMAILS || []).map(e => String(e).toLowerCase());
 
     function readStoredSession() {
         try {
@@ -30,14 +31,6 @@
 
     const session = readStoredSession();
     if (!session) {
-        redirectToLogin();
-        return;
-    }
-
-    const email = String(session.user.email || '').toLowerCase();
-    if (adminEmails.length && !adminEmails.includes(email)) {
-        try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
-        alert('このアカウントには管理画面へのアクセス権がありません。');
         redirectToLogin();
         return;
     }
