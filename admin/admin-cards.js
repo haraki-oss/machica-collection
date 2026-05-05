@@ -225,7 +225,7 @@ function renderCardTable() {
   // 空状態
   if (displayed.length === 0) {
     const msg = filtered ? '条件に合うスポットがありません' : 'スポットが見つかりません';
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:48px;color:var(--text-muted);">${msg}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:48px;color:var(--text-muted);">${msg}</td></tr>`;
     rebuildStaffOptions();
     refreshFilterUiState();
     return;
@@ -238,6 +238,8 @@ function renderCardTable() {
     const recommenderHtml = recommender
       ? `<span style="font-size:0.85rem;">${recommender}</span>`
       : `<span style="font-size:0.82rem;color:var(--text-muted);">—</span>`;
+
+    const createdHtml = formatCreatedDateCell(card);
 
     const handleAttrs = dragEnabled
       ? 'title="ドラッグして並び替え"'
@@ -262,6 +264,7 @@ function renderCardTable() {
                 </td>
                 <td><span style="font-size:0.85rem;">${area}</span></td>
                 <td>${recommenderHtml}</td>
+                <td>${createdHtml}</td>
                 <td>
                     <div style="display:flex; gap:6px;">
                         <a href="cards-edit.html?id=${card.id}" class="action-btn">編集</a>
@@ -428,8 +431,37 @@ function labelOfSortKey(key) {
     case 'category': return 'ジャンル';
     case 'area': return 'エリア';
     case 'recommender': return 'レコメンドスタッフ';
+    case 'created': return '作成日';
     default: return key;
   }
+}
+
+/**
+ * カードの作成日時を返す（Date オブジェクト）。
+ * - card.created_at があればそれを優先
+ * - 無ければ id（Date.now() ベースで採番）からタイムスタンプを推定
+ * - id が小さい（モック由来）の場合は null を返し、UI 側で「—」表示
+ */
+function getCardCreatedAt(card) {
+  if (card.created_at) {
+    const d = new Date(card.created_at);
+    if (!isNaN(d.getTime())) return d;
+  }
+  // Date.now() で採番された ID は ミリ秒タイムスタンプ。年 2000 以降のミリ秒はおおよそ 9.5e11〜。
+  // モックの 1〜10 のような小さい id はタイムスタンプとして扱わない。
+  if (typeof card.id === 'number' && card.id > 1e12) {
+    const d = new Date(card.id);
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
+}
+
+function formatCreatedDateCell(card) {
+  const d = getCardCreatedAt(card);
+  if (!d) return `<span style="font-size:0.82rem;color:var(--text-muted);">—</span>`;
+  const ymd = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+  const full = d.toLocaleString('ja-JP');
+  return `<span style="font-size:0.82rem;" title="${full}">${ymd}</span>`;
 }
 
 /**
@@ -448,6 +480,11 @@ function sortAllCardsBy(column, direction) {
       }
       case 'area': return (card.area || '').toLowerCase();
       case 'recommender': return (card.recommended_by || '').toLowerCase();
+      case 'created': {
+        const d = getCardCreatedAt(card);
+        // 取れないカードはソート時に末尾になるよう、降順で 0、昇順で巨大値を返す
+        return d ? d.getTime() : (direction === 'desc' ? 0 : Number.MAX_SAFE_INTEGER);
+      }
       default: return '';
     }
   };
@@ -455,7 +492,12 @@ function sortAllCardsBy(column, direction) {
   allCards.sort((a, b) => {
     const av = keyFn(a);
     const bv = keyFn(b);
-    const cmp = String(av).localeCompare(String(bv), 'ja');
+    let cmp;
+    if (typeof av === 'number' && typeof bv === 'number') {
+      cmp = av - bv;
+    } else {
+      cmp = String(av).localeCompare(String(bv), 'ja');
+    }
     return direction === 'desc' ? -cmp : cmp;
   });
 }
