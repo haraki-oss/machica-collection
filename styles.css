@@ -1729,6 +1729,18 @@ a.bi-row:hover {
         gap: 10px;
     }
 
+    .filter-inner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .search-stack {
+        width: 100%;
+        min-width: 0;
+        flex: 0 0 auto;
+    }
+
     .search-box {
         min-width: 100%;
         max-width: 100%;
@@ -1737,11 +1749,24 @@ a.bi-row:hover {
 
     .genre-filters {
         gap: 6px;
+        width: 100%;
+        flex: 0 0 auto;
+        justify-content: flex-start;
     }
 
     .genre-btn {
-        padding: 7px 12px;
-        font-size: 0.8rem;
+        padding: 8px 14px;
+        font-size: 0.85rem;
+        min-height: 38px;
+    }
+
+    .area-filter-wrap {
+        width: 100%;
+    }
+
+    .area-select {
+        width: 100%;
+        min-width: 0;
     }
 
     .cards-section {

@@ -25,3 +25,6 @@ admin/admin_debug.txt
 
 # docs フォルダ（開発用ドキュメントはGit管理から除外）
 docs/
+
+# Claude Code ローカル設定（プレビューサーバー設定など）
+.claude/
