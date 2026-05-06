@@ -1938,58 +1938,88 @@ a.bi-row:hover {
    ===================================================== */
 .tag-filter-wrap {
     max-width: 1280px;
-    margin: 12px auto 0;
+    margin: 14px auto 0;
 }
 
+/* トグルボタン：上品な「フィルターチップ」スタイル。
+   ・通常時：白背景 + 薄影で「ボタン」感を出す
+   ・選択中：プライマリ色で塗りつぶし、選択中バッジを強調
+   ・パネル展開中：プライマリ色 + 矢印 180° */
 .tag-filter-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    background: var(--bg-soft);
+    gap: 10px;
+    background: var(--bg-white);
     border: 1.5px solid var(--border);
-    border-radius: 100px;
-    padding: 8px 16px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-secondary);
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text-primary);
     cursor: pointer;
     transition: all var(--transition);
     font-family: inherit;
+    letter-spacing: 0.02em;
+    box-shadow: 0 1px 2px rgba(30, 27, 25, 0.04);
 }
 
 .tag-filter-toggle:hover {
     border-color: var(--primary);
-    color: var(--primary);
-    background: var(--bg-white);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(30, 27, 25, 0.08);
 }
 
+/* タグ未選択でもパネル開いている時：軽く強調 */
 .tag-filter-wrap.is-open .tag-filter-toggle {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(30, 27, 25, 0.18);
+}
+
+/* タグが選択されている時：常時プライマリ色塗り（パネル開閉問わず） */
+.tag-filter-toggle.has-selection {
     background: var(--primary);
     border-color: var(--primary);
     color: #fff;
 }
 
-.tag-filter-toggle-icon { font-size: 0.95rem; }
+.tag-filter-toggle-icon {
+    font-size: 1rem;
+    line-height: 1;
+}
 
 .tag-filter-toggle-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    color: var(--primary);
+    border-radius: 100px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 7px;
+    font-size: 0.76rem;
+    font-weight: 800;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* 通常時（プライマリ色塗りでない）の選択数バッジは赤で目立たせる */
+.tag-filter-toggle:not(.has-selection):not(.is-open) .tag-filter-toggle-count {
     background: #E0245E;
     color: #fff;
-    border-radius: 100px;
-    min-width: 20px;
-    text-align: center;
-    padding: 0 6px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    line-height: 18px;
 }
 
 .tag-filter-toggle-arrow {
-    font-size: 0.65rem;
-    transition: transform 0.2s ease;
+    font-size: 0.7rem;
+    line-height: 1;
+    opacity: 0.7;
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tag-filter-wrap.is-open .tag-filter-toggle-arrow {
     transform: rotate(180deg);
+    opacity: 1;
 }
 
 .tag-filter-panel {
@@ -2002,6 +2032,12 @@ a.bi-row:hover {
 }
 
 .tag-filter-panel[hidden] { display: none; }
+
+/* バックドロップ・ヘッダ・フッタはデスクトップでは非表示。
+   スマホのボトムシート時のみ出現（@mediaクエリ内で表示制御） */
+.tag-filter-backdrop { display: none; }
+.tag-filter-panel-header { display: none; }
+.tag-filter-panel-footer { display: none; }
 
 .tag-filter-selected-row {
     display: flex;
@@ -2177,7 +2213,135 @@ a.bi-row:hover {
 @media (max-width: 768px) {
     .tag-filter-wrap { margin: 10px 16px 0; }
     .tag-filter-cat-pills { padding-left: 18px; }
-    .tag-filter-cats { max-height: 360px; }
+
+    /* スマホ：パネル展開中はボトムシート化。スクロールしても消えない */
+    .tag-filter-wrap.is-open .tag-filter-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(20, 20, 20, 0.42);
+        z-index: 199;
+        animation: tagPanelBackdropFade 0.2s ease;
+    }
+
+    .tag-filter-wrap.is-open .tag-filter-panel {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        margin: 0;
+        z-index: 200;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        border: none;
+        border-radius: 18px 18px 0 0;
+        padding: 0;
+        box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.18);
+        animation: tagPanelSlideUp 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .tag-filter-panel-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px 6px;
+        border-bottom: 1px solid var(--border-light);
+        position: relative;
+    }
+
+    .tag-filter-panel-handle {
+        position: absolute;
+        top: 6px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 36px;
+        height: 4px;
+        border-radius: 100px;
+        background: var(--border);
+    }
+
+    .tag-filter-panel-title {
+        flex: 1;
+        font-weight: 800;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        margin-top: 6px;
+    }
+
+    .tag-filter-panel-close {
+        background: transparent;
+        border: none;
+        font-size: 1rem;
+        color: var(--text-muted);
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        margin-top: 4px;
+        font-family: inherit;
+    }
+
+    .tag-filter-panel-close:hover {
+        background: var(--bg-soft);
+        color: var(--text-primary);
+    }
+
+    .tag-filter-wrap.is-open .tag-filter-selected-row {
+        margin: 0;
+        padding: 10px 16px;
+        border-bottom: 1px dashed var(--border);
+    }
+
+    .tag-filter-wrap.is-open .tag-filter-cats {
+        flex: 1;
+        max-height: none;
+        overflow-y: auto;
+        padding: 12px 16px 12px;
+    }
+
+    .tag-filter-panel-footer {
+        display: block;
+        padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
+        border-top: 1px solid var(--border-light);
+        background: var(--bg-white);
+    }
+
+    .tag-filter-apply-btn {
+        width: 100%;
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-md);
+        padding: 14px 18px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: inherit;
+        box-shadow: 0 4px 14px rgba(30, 27, 25, 0.18);
+        transition: all var(--transition);
+    }
+
+    .tag-filter-apply-btn:hover,
+    .tag-filter-apply-btn:active {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(30, 27, 25, 0.24);
+    }
+
+    /* ボトムシート展開中は背景スクロール抑止用クラス（JSで body に付ける） */
+    body.tag-filter-sheet-open {
+        overflow: hidden;
+    }
+
+    @keyframes tagPanelBackdropFade {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes tagPanelSlideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
 }
 
 /* =====================================================

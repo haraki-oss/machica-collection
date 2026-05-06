@@ -91,15 +91,23 @@
                     <option value="all">エリア（全国）</option>
                 </select>
             </div>
-        <!-- タグフィルター（折りたたみ式） -->
+        <!-- タグフィルター（折りたたみ式 / スマホはボトムシート） -->
         <div class="tag-filter-wrap" id="tagFilterWrap">
             <button class="tag-filter-toggle" id="tagFilterToggle" type="button" aria-expanded="false" aria-controls="tagFilterPanel">
-                <span class="tag-filter-toggle-icon">🔖</span>
+                <span class="tag-filter-toggle-icon" aria-hidden="true">🔖</span>
                 <span class="tag-filter-toggle-label">タグで絞り込み</span>
                 <span class="tag-filter-toggle-count" id="tagFilterCount" hidden>0</span>
                 <span class="tag-filter-toggle-arrow" aria-hidden="true">▾</span>
             </button>
+            <!-- バックドロップ（スマホのみ・パネル展開中表示） -->
+            <div class="tag-filter-backdrop" id="tagFilterBackdrop" aria-hidden="true"></div>
             <div class="tag-filter-panel" id="tagFilterPanel" hidden>
+                <!-- スマホ時はボトムシート用ヘッダ：ハンドル + タイトル + 閉じる -->
+                <div class="tag-filter-panel-header">
+                    <span class="tag-filter-panel-handle" aria-hidden="true"></span>
+                    <span class="tag-filter-panel-title">タグで絞り込み</span>
+                    <button type="button" class="tag-filter-panel-close" id="tagFilterPanelClose" aria-label="閉じる">✕</button>
+                </div>
                 <div class="tag-filter-selected-row" id="tagFilterSelectedRow" hidden>
                     <span class="tag-filter-selected-label">選択中</span>
                     <div class="tag-filter-selected" id="tagFilterSelected"></div>
@@ -107,6 +115,12 @@
                 </div>
                 <div class="tag-filter-cats" id="tagFilterCats">
                     <!-- JSで生成 -->
+                </div>
+                <!-- スマホ用「結果を見る」フッター -->
+                <div class="tag-filter-panel-footer">
+                    <button type="button" class="tag-filter-apply-btn" id="tagFilterApplyBtn">
+                        <span id="tagFilterApplyLabel">結果を見る</span>
+                    </button>
                 </div>
             </div>
         </div>

@@ -104,19 +104,59 @@ function escapeHtmlSafe(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
-// ── タグフィルター（公開側、折りたたみ） ─────────────
+// ── タグフィルター（公開側、折りたたみ／スマホはボトムシート） ─────
 function bindTagFilterEvents() {
     const toggle = document.getElementById('tagFilterToggle');
     const panel  = document.getElementById('tagFilterPanel');
     const wrap   = document.getElementById('tagFilterWrap');
     const clearBtn = document.getElementById('tagFilterClearBtn');
+    const backdrop = document.getElementById('tagFilterBackdrop');
+    const closeBtn = document.getElementById('tagFilterPanelClose');
+    const applyBtn = document.getElementById('tagFilterApplyBtn');
+
+    function isMobile() {
+        return window.matchMedia('(max-width: 768px)').matches;
+    }
+
+    function openPanel() {
+        state.tagFilterOpen = true;
+        panel.hidden = false;
+        toggle.setAttribute('aria-expanded', 'true');
+        wrap.classList.add('is-open');
+        if (isMobile()) document.body.classList.add('tag-filter-sheet-open');
+        renderTagFilterPanel();
+        updateTagFilterApplyLabel();
+    }
+
+    function closePanel() {
+        state.tagFilterOpen = false;
+        panel.hidden = true;
+        toggle.setAttribute('aria-expanded', 'false');
+        wrap.classList.remove('is-open');
+        document.body.classList.remove('tag-filter-sheet-open');
+    }
 
     toggle?.addEventListener('click', () => {
-        state.tagFilterOpen = !state.tagFilterOpen;
-        panel.hidden = !state.tagFilterOpen;
-        toggle.setAttribute('aria-expanded', state.tagFilterOpen ? 'true' : 'false');
-        wrap.classList.toggle('is-open', state.tagFilterOpen);
-        if (state.tagFilterOpen) renderTagFilterPanel();
+        if (state.tagFilterOpen) closePanel();
+        else openPanel();
+    });
+
+    closeBtn?.addEventListener('click', closePanel);
+    backdrop?.addEventListener('click', closePanel);
+    applyBtn?.addEventListener('click', closePanel);
+
+    // ESCで閉じる
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && state.tagFilterOpen) closePanel();
+    });
+
+    // ビューポートが変わったら（横向き等）body lock を整合
+    window.addEventListener('resize', () => {
+        if (state.tagFilterOpen && isMobile()) {
+            document.body.classList.add('tag-filter-sheet-open');
+        } else {
+            document.body.classList.remove('tag-filter-sheet-open');
+        }
     });
 
     clearBtn?.addEventListener('click', () => {
@@ -124,10 +164,18 @@ function bindTagFilterEvents() {
         renderTagFilterPanel();
         renderTagFilterSelected();
         applyFilters();
+        updateTagFilterApplyLabel();
     });
 
     // 初期描画（パネル中身）
     renderTagFilterPanel();
+}
+
+function updateTagFilterApplyLabel() {
+    const label = document.getElementById('tagFilterApplyLabel');
+    if (!label) return;
+    const n = state.filtered ? state.filtered.length : 0;
+    label.textContent = `${n}件の結果を見る`;
 }
 
 function renderTagFilterPanel() {
@@ -190,13 +238,16 @@ function renderTagFilterSelected() {
 
 function updateTagFilterCount() {
     const badge = document.getElementById('tagFilterCount');
+    const toggle = document.getElementById('tagFilterToggle');
     if (!badge) return;
     const n = state.selectedTagIds ? state.selectedTagIds.size : 0;
     if (n > 0) {
         badge.textContent = String(n);
         badge.hidden = false;
+        toggle?.classList.add('has-selection');
     } else {
         badge.hidden = true;
+        toggle?.classList.remove('has-selection');
     }
 }
 
@@ -911,6 +962,7 @@ function applyFilters() {
     renderCards(state.filtered);
     updateMyLikesUI();
     updateTagFilterCount();
+    updateTagFilterApplyLabel();
 }
 
 function resetFilters() {
