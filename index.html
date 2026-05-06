@@ -66,43 +66,46 @@
     <!-- 検索・フィルターセクション -->
     <section class="filter-section">
         <div class="filter-inner">
-            <!-- キーワード検索 + スタッフフィルター（縦積み） -->
-            <div class="search-stack">
+            <!-- 1段目：検索ボックス + エリアセレクト（同じ高さで横並び） -->
+            <div class="filter-primary-row">
                 <div class="search-box">
-                    <span class="search-icon">🔍</span>
+                    <span class="search-icon" aria-hidden="true">🔍</span>
                     <input type="text" id="searchInput" class="search-input" placeholder="スポット名・キーワードで検索…" />
                     <button class="search-clear" id="searchClear" aria-label="クリア">✕</button>
                 </div>
-                <div class="staff-filter-row">
-                    <select class="staff-select" id="staffSelect" aria-label="スタッフで絞り込み">
-                        <option value="all">スタッフで絞り込み</option>
+                <div class="area-filter-wrap">
+                    <select class="area-select" id="areaSelect" aria-label="エリアで絞り込み">
+                        <option value="all">エリア（全国）</option>
                     </select>
-                    <button type="button" class="staff-clear-btn" id="staffClearBtn" aria-label="スタッフフィルターを解除">✕ 解除</button>
                 </div>
             </div>
-            <!-- ジャンルフィルター -->
-            <div class="genre-filters" id="genreFilters">
-                <button class="genre-btn active" data-genre="all">すべて</button>
-                <!-- JSで動的生成 -->
-            </div>
-            <!-- エリアフィルター -->
-            <div class="area-filter-wrap">
-                <select class="area-select" id="areaSelect">
-                    <option value="all">エリア（全国）</option>
+
+            <!-- 2段目：スタッフ絞り込み（控えめなサブフィルター） -->
+            <div class="staff-filter-row">
+                <select class="staff-select" id="staffSelect" aria-label="スタッフで絞り込み">
+                    <option value="all">スタッフで絞り込み</option>
                 </select>
+                <button type="button" class="staff-clear-btn" id="staffClearBtn" aria-label="スタッフフィルターを解除">✕ 解除</button>
             </div>
-        <!-- タグフィルター（折りたたみ式 / スマホはボトムシート） -->
+
+            <!-- 3段目：ジャンル + タグ（同じピル系統で揃える） -->
+            <div class="filter-pill-row">
+                <div class="genre-filters" id="genreFilters">
+                    <button class="genre-btn active" data-genre="all">すべて</button>
+                    <!-- JSで動的生成 -->
+                </div>
+                <button class="tag-filter-toggle" id="tagFilterToggle" type="button" aria-expanded="false" aria-controls="tagFilterPanel">
+                    <span class="tag-filter-toggle-label">タグで絞り込み</span>
+                    <span class="tag-filter-toggle-count" id="tagFilterCount" hidden>0</span>
+                    <span class="tag-filter-toggle-arrow" aria-hidden="true">▾</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- タグパネル本体（スマホはボトムシート、デスクトップはインライン展開） -->
         <div class="tag-filter-wrap" id="tagFilterWrap">
-            <button class="tag-filter-toggle" id="tagFilterToggle" type="button" aria-expanded="false" aria-controls="tagFilterPanel">
-                <span class="tag-filter-toggle-icon" aria-hidden="true">🔖</span>
-                <span class="tag-filter-toggle-label">タグで絞り込み</span>
-                <span class="tag-filter-toggle-count" id="tagFilterCount" hidden>0</span>
-                <span class="tag-filter-toggle-arrow" aria-hidden="true">▾</span>
-            </button>
-            <!-- バックドロップ（スマホのみ・パネル展開中表示） -->
             <div class="tag-filter-backdrop" id="tagFilterBackdrop" aria-hidden="true"></div>
             <div class="tag-filter-panel" id="tagFilterPanel" hidden>
-                <!-- スマホ時はボトムシート用ヘッダ：ハンドル + タイトル + 閉じる -->
                 <div class="tag-filter-panel-header">
                     <span class="tag-filter-panel-handle" aria-hidden="true"></span>
                     <span class="tag-filter-panel-title">タグで絞り込み</span>
@@ -116,7 +119,6 @@
                 <div class="tag-filter-cats" id="tagFilterCats">
                     <!-- JSで生成 -->
                 </div>
-                <!-- スマホ用「結果を見る」フッター -->
                 <div class="tag-filter-panel-footer">
                     <button type="button" class="tag-filter-apply-btn" id="tagFilterApplyBtn">
                         <span id="tagFilterApplyLabel">結果を見る</span>
@@ -124,6 +126,7 @@
                 </div>
             </div>
         </div>
+
         <div class="result-count">
             <span id="resultCount">0</span>件のスポットが見つかりました
         </div>

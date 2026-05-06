@@ -851,10 +851,9 @@ async function renderGenreButtons() {
         btn.className = `genre-btn ${state.genre == cat.id ? 'active' : ''}`;
         btn.dataset.genre = cat.id;
 
-        const iconHtml = getCategoryIcon(cat);
-
+        // ジャンルボタンはテキストのみ（カテゴリアイコンはモーダルバッジ等で利用）
         const name = state.lang === 'en' && cat.name_en ? cat.name_en : cat.name;
-        btn.innerHTML = `${iconHtml}<span>${name}</span>`;
+        btn.textContent = name;
         btn.onclick = () => setGenre(cat.id);
         container.appendChild(btn);
     });
