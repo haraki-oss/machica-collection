@@ -47,11 +47,21 @@
             this.statusEl = rootEl.querySelector('.tag-selector-status');
             this.allTags = [];
             this.byId = new Map();
+            this.categories = [];     // 統合済みカテゴリ
+            this.catMap = new Map();
             this.selectedIds = new Set();
             this.searchQuery = '';
         }
 
         async load() {
+            // カテゴリ（seed + custom + 編集差分・削除反映）
+            if (typeof loadMergedTagCategories === 'function') {
+                this.categories = await loadMergedTagCategories();
+            } else {
+                this.categories = (typeof TAG_CATEGORIES !== 'undefined' ? TAG_CATEGORIES : []).slice();
+            }
+            this.catMap = new Map(this.categories.map(c => [c.key, c]));
+            // タグ
             this.allTags = await loadAllTagsUnified();
             this.byId = new Map(this.allTags.map(t => [t.id, t]));
             this.bindEvents();
@@ -94,7 +104,9 @@
                 const has = Array.from(this.selectedIds)
                     .some(id => this.byId.get(id)?.category === cat);
                 if (!has) {
-                    const catName = TAG_CATEGORY_MAP?.[cat]?.name || cat;
+                    const catName = this.catMap.get(cat)?.name
+                        || TAG_CATEGORY_MAP?.[cat]?.name
+                        || cat;
                     return { ok: false, message: `「${catName}」のタグを1つ以上選択してください` };
                 }
             }
@@ -124,7 +136,7 @@
                 .map(id => this.byId.get(id))
                 .filter(Boolean);
             this.selectedListEl.innerHTML = items.map(t => {
-                const color = t.color || (TAG_CATEGORY_MAP[t.category]?.color) || '#888';
+                const color = t.color || this.catMap.get(t.category)?.color || '#888';
                 return `<button type="button" class="tag-chip" style="--tag-color:${color}" data-id="${escapeHtml(t.id)}">
                     <span class="tag-chip-name">${escapeHtml(t.name)}</span>
                     <span class="tag-chip-x" aria-hidden="true">×</span>
@@ -136,7 +148,7 @@
         }
 
         renderCats() {
-            const cats = (typeof TAG_CATEGORIES !== 'undefined' ? TAG_CATEGORIES : []);
+            const cats = this.categories;
             const filtered = this.searchQuery
                 ? this.allTags.filter(t => t.name.toLowerCase().includes(this.searchQuery))
                 : this.allTags;
@@ -152,7 +164,7 @@
                 return `<div class="tag-selector-cat">
                     <div class="tag-selector-cat-title">
                         <span style="width:10px;height:10px;border-radius:50%;background:${cat.color};display:inline-block;"></span>
-                        <span>${cat.name}</span>
+                        <span>${escapeHtml(cat.name)}</span>
                         ${isRequired ? '<span class="tag-selector-cat-required">必須</span>' : ''}
                         ${isRecommended ? '<span class="tag-selector-cat-recommend">推奨</span>' : ''}
                     </div>
@@ -174,7 +186,7 @@
         }
 
         _renderPick(t) {
-            const color = t.color || (TAG_CATEGORY_MAP[t.category]?.color) || '#888';
+            const color = t.color || this.catMap.get(t.category)?.color || '#888';
             const selected = this.selectedIds.has(t.id);
             const disabled = !selected && this.selectedIds.size >= this.max;
             const cls = ['tag-pick'];
@@ -194,7 +206,7 @@
             // 推奨警告
             const rec = this.getRecommendationStatus();
             if (rec.missing.length) {
-                const names = rec.missing.map(k => TAG_CATEGORY_MAP[k]?.name || k).join('・');
+                const names = rec.missing.map(k => this.catMap.get(k)?.name || TAG_CATEGORY_MAP?.[k]?.name || k).join('・');
                 this.statusEl.textContent += `（${names}があると◎）`;
             }
         }

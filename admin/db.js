@@ -3,7 +3,7 @@
  * Replaces IndexedDB with Supabase Database
  */
 
-const STORES = ['cards', 'areas', 'categories', 'settings', 'tags'];
+const STORES = ['cards', 'areas', 'categories', 'settings', 'tags', 'tag_categories'];
 
 const machicaDB = {
     /**

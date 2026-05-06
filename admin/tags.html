@@ -52,6 +52,34 @@
                 </div>
             </div>
 
+            <!-- カテゴリ追加・編集フォーム -->
+            <div class="form-card" style="margin-bottom:20px;">
+                <p class="form-section-title" id="catFormTitle">📁 カテゴリ管理（タグの大分類）</p>
+                <p style="font-size:0.82rem; color:var(--text-muted); margin:0 0 12px;">
+                    タグの大分類です（例：ジャンル・シーン・感情）。新しい大分類を追加したり、既存のものを編集・削除できます。
+                </p>
+                <form id="categoryForm" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; align-items:flex-end;">
+                    <input type="hidden" id="editCatKey" value="" />
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" for="catName">カテゴリ名 <span class="required">*</span></label>
+                        <input type="text" id="catName" class="form-control" placeholder="例：温度感" required />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" for="catColor">表示色 <span class="required">*</span></label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="color" id="catColor" class="form-control" style="width:50px; padding:2px;" value="#9B59B6" required />
+                            <input type="text" id="catColorHex" class="form-control" placeholder="#9B59B6" value="#9B59B6" />
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button type="submit" class="btn-primary" id="catSubmitBtn" style="height:42px; flex:1;">追加する</button>
+                        <button type="button" class="btn-secondary" id="catCancelBtn" style="height:42px; display:none;">取消</button>
+                    </div>
+                </form>
+                <!-- カテゴリ一覧（チップ表示） -->
+                <div id="categoryListMini" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:14px;"></div>
+            </div>
+
             <!-- タグ追加・編集フォーム -->
             <div class="form-card" style="margin-bottom:24px;">
                 <p class="form-section-title" id="tagFormTitle">➕ 新規タグ追加</p>
@@ -100,7 +128,7 @@
         </main>
     </div>
 
-    <!-- 削除確認モーダル -->
+    <!-- 削除確認モーダル：タグ -->
     <div id="tagDeleteModal" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
@@ -115,6 +143,23 @@
             <div class="modal-footer">
                 <button class="btn-secondary" id="tagDeleteCancelBtn">キャンセル</button>
                 <button class="btn-primary danger" id="tagDeleteConfirmBtn">削除する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 削除確認モーダル：カテゴリ -->
+    <div id="catDeleteModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">カテゴリの削除</h3>
+            </div>
+            <div class="modal-body">
+                <p id="catDeleteConfirmText"></p>
+                <p id="catDeleteCascadeWarn" style="color:var(--danger);font-size:0.8rem;margin-top:8px;display:none;"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="catDeleteCancelBtn">キャンセル</button>
+                <button class="btn-primary danger" id="catDeleteConfirmBtn">削除する</button>
             </div>
         </div>
     </div>

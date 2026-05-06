@@ -1168,6 +1168,62 @@ textarea.form-control {
     font-size: 0.72rem;
 }
 
+/* カテゴリ管理：コンパクトなチップ表示 */
+.cat-mini-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-soft);
+    border: 1.5px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    transition: all 0.15s ease;
+}
+
+.cat-mini-pill:hover {
+    border-color: var(--primary);
+    background: var(--bg-white);
+}
+
+.cat-mini-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+.cat-mini-name {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.cat-mini-count {
+    background: var(--bg-white);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 1px 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    min-width: 24px;
+    text-align: center;
+}
+
+.cat-mini-badge {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    letter-spacing: 0.05em;
+}
+
+.cat-mini-pill .action-btn {
+    padding: 2px 8px;
+    font-size: 0.72rem;
+}
+
 /* ==================================================
    タグ選択 UI（カード新規・編集画面で使う）
    ================================================== */

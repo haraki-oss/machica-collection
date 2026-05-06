@@ -22,6 +22,8 @@ let state = {
     showLikedOnly: false, // MY LIKES モード
     tags: [],          // タグ一覧（初期データ + Supabase 由来をマージ済み）
     tagById: new Map(), // id → tag のルックアップ
+    tagCategories: [],  // タグの大カテゴリ（seed 12 + 管理画面で追加されたもの）
+    tagCategoryMap: new Map(), // key → category のルックアップ
     selectedTagIds: new Set(),     // 公開側タグフィルター：選択中のタグID
     tagFilterCollapsedCats: new Set(), // 公開側タグフィルター：折りたたみ中のカテゴリ key
     tagFilterOpen: false,          // タグフィルターパネルの開閉
@@ -57,6 +59,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // ── タグ初期化 ─────────────────────────────────────
 async function initTags() {
+    // タグの大カテゴリ（seed + custom + 編集差分）
+    try {
+        if (typeof loadMergedTagCategories === 'function') {
+            state.tagCategories = await loadMergedTagCategories();
+        } else {
+            state.tagCategories = (typeof TAG_CATEGORIES !== 'undefined' ? TAG_CATEGORIES : []).slice();
+        }
+        state.tagCategoryMap = new Map(state.tagCategories.map(c => [c.key, c]));
+    } catch (e) {
+        console.warn('initTags: tag categories fallback to seed only', e);
+        state.tagCategories = (typeof TAG_CATEGORIES !== 'undefined' ? TAG_CATEGORIES : []).slice();
+        state.tagCategoryMap = new Map(state.tagCategories.map(c => [c.key, c]));
+    }
+
+    // タグ
     try {
         const customTags = await machicaDB.getAll('tags');
         const settings = await machicaDB.getAll('settings');
@@ -95,7 +112,9 @@ function renderTagPills(card, opts) {
     const visible = tags.slice(0, limit);
     const overflow = tags.length - visible.length;
     return visible.map(t => {
-        const color = t.color || (typeof TAG_CATEGORY_MAP !== 'undefined' ? TAG_CATEGORY_MAP[t.category]?.color : '') || '#888';
+        const color = t.color || state.tagCategoryMap.get(t.category)?.color
+            || (typeof TAG_CATEGORY_MAP !== 'undefined' ? TAG_CATEGORY_MAP[t.category]?.color : '')
+            || '#888';
         return `<span class="card-tag-pill ${variant === 'compact' ? 'is-compact' : ''}" style="--tag-color:${color}">${escapeHtmlSafe(t.name)}</span>`;
     }).join('') + (overflow > 0 ? `<span class="card-tag-more">+${overflow}</span>` : '');
 }
@@ -182,7 +201,7 @@ function renderTagFilterPanel() {
     const root = document.getElementById('tagFilterCats');
     if (!root) return;
 
-    const cats = (typeof TAG_CATEGORIES !== 'undefined' ? TAG_CATEGORIES : []);
+    const cats = state.tagCategories;
     const tagsByCat = {};
     for (const c of cats) tagsByCat[c.key] = [];
     for (const t of state.tags) {
@@ -228,7 +247,7 @@ function renderTagFilterSelected() {
     list.innerHTML = Array.from(state.selectedTagIds).map(id => {
         const t = state.tagById.get(id);
         if (!t) return '';
-        const color = t.color || (TAG_CATEGORY_MAP?.[t.category]?.color) || '#888';
+        const color = t.color || state.tagCategoryMap.get(t.category)?.color || '#888';
         return `<button type="button" class="tag-filter-chip" style="--tag-color:${color}" onclick="window.toggleTagFilterPick('${escapeHtmlSafe(id)}')">
             <span>${escapeHtmlSafe(t.name)}</span>
             <span class="tag-filter-chip-x" aria-hidden="true">×</span>

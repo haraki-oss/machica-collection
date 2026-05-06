@@ -9,20 +9,20 @@
  * =====================================================
  */
 
-// カテゴリ定義（key は内部識別子・en 名、name は表示名、color はカテゴリ色）
+// カテゴリ定義（key は内部識別子・en 名、name は表示名、color はカテゴリ色、sort_order は表示順）
 const TAG_CATEGORIES = [
-    { key: 'genre',     name: 'ジャンル',   color: '#FF6B6B' },
-    { key: 'scene',     name: 'シーン',     color: '#4ECDC4' },
-    { key: 'price',     name: '価格帯',     color: '#F2B705' },
-    { key: 'feature',   name: '特徴',       color: '#6BCB77' },
-    { key: 'space',     name: '空間',       color: '#8E9AAF' },
-    { key: 'experience',name: '体験',       color: '#9B59B6' },
-    { key: 'emotion',   name: '感情',       color: '#E0245E' },
-    { key: 'story',     name: 'ストーリー', color: '#F39C12' },
-    { key: 'action',    name: '行動',       color: '#3498DB' },
-    { key: 'time',      name: '時間',       color: '#34495E' },
-    { key: 'target',    name: 'ターゲット', color: '#E67E22' },
-    { key: 'season',    name: '季節',       color: '#FF9FF3' }
+    { key: 'genre',     name: 'ジャンル',   color: '#FF6B6B', sort_order: 10 },
+    { key: 'scene',     name: 'シーン',     color: '#4ECDC4', sort_order: 20 },
+    { key: 'price',     name: '価格帯',     color: '#F2B705', sort_order: 30 },
+    { key: 'feature',   name: '特徴',       color: '#6BCB77', sort_order: 40 },
+    { key: 'space',     name: '空間',       color: '#8E9AAF', sort_order: 50 },
+    { key: 'experience',name: '体験',       color: '#9B59B6', sort_order: 60 },
+    { key: 'emotion',   name: '感情',       color: '#E0245E', sort_order: 70 },
+    { key: 'story',     name: 'ストーリー', color: '#F39C12', sort_order: 80 },
+    { key: 'action',    name: '行動',       color: '#3498DB', sort_order: 90 },
+    { key: 'time',      name: '時間',       color: '#34495E', sort_order: 100 },
+    { key: 'target',    name: 'ターゲット', color: '#E67E22', sort_order: 110 },
+    { key: 'season',    name: '季節',       color: '#FF9FF3', sort_order: 120 }
 ];
 
 // カテゴリ別の初期タグ名リスト
@@ -63,9 +63,53 @@ const TAGS_DATA = (() => {
 // カテゴリ key → 表示名 / 色 を引くヘルパ
 const TAG_CATEGORY_MAP = TAG_CATEGORIES.reduce((acc, c) => { acc[c.key] = c; return acc; }, {});
 
+/**
+ * 初期12カテゴリ + 管理画面で追加されたカテゴリを統合して返す。
+ * - 削除済み（settings.deleted_tag_category_keys）は除外
+ * - 編集差分（settings.tag_category_overrides）を反映
+ * - tag_categories ストア由来のカスタムカテゴリを末尾に追加
+ *
+ * machicaDB が未定義の場合は seed のみ返す（データロード前のフェイルセーフ）。
+ */
+async function loadMergedTagCategories() {
+    if (typeof machicaDB === 'undefined') {
+        return TAG_CATEGORIES.map(c => ({ ...c, is_seed: true }));
+    }
+    try {
+        const customCats = (await machicaDB.getAll('tag_categories')) || [];
+        const settings = (await machicaDB.getAll('settings')) || [];
+        const deletedKeys = (settings.find(s => s.id === 'deleted_tag_category_keys')?.value) || [];
+        const overrides = (settings.find(s => s.id === 'tag_category_overrides')?.value) || {};
+
+        const seed = TAG_CATEGORIES
+            .filter(c => !deletedKeys.includes(c.key))
+            .map(c => ({ ...c, ...(overrides[c.key] || {}), is_seed: true }));
+
+        // 同じ key のカスタムが居れば seed を上書き、新規 key はそのまま末尾に
+        const customByKey = new Map(customCats.map(c => [c.key, { ...c, is_seed: false }]));
+        const merged = seed.map(c => customByKey.has(c.key) ? customByKey.get(c.key) : c);
+        const seedKeys = new Set(seed.map(c => c.key));
+        for (const c of customCats) {
+            if (!seedKeys.has(c.key)) merged.push({ ...c, is_seed: false });
+        }
+
+        // sort_order があれば優先（無いものは末尾扱い）
+        merged.sort((a, b) => {
+            const ao = a.sort_order ?? 9999;
+            const bo = b.sort_order ?? 9999;
+            return ao - bo;
+        });
+        return merged;
+    } catch (e) {
+        console.warn('loadMergedTagCategories: fallback to seed only', e);
+        return TAG_CATEGORIES.map(c => ({ ...c, is_seed: true }));
+    }
+}
+
 // グローバル公開（vanilla 構成のため）
 if (typeof window !== 'undefined') {
     window.TAG_CATEGORIES = TAG_CATEGORIES;
     window.TAGS_DATA = TAGS_DATA;
     window.TAG_CATEGORY_MAP = TAG_CATEGORY_MAP;
+    window.loadMergedTagCategories = loadMergedTagCategories;
 }
