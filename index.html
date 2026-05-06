@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -89,6 +90,24 @@
                 <select class="area-select" id="areaSelect">
                     <option value="all">エリア（全国）</option>
                 </select>
+            </div>
+        <!-- タグフィルター（折りたたみ式） -->
+        <div class="tag-filter-wrap" id="tagFilterWrap">
+            <button class="tag-filter-toggle" id="tagFilterToggle" type="button" aria-expanded="false" aria-controls="tagFilterPanel">
+                <span class="tag-filter-toggle-icon">🔖</span>
+                <span class="tag-filter-toggle-label">タグで絞り込み</span>
+                <span class="tag-filter-toggle-count" id="tagFilterCount" hidden>0</span>
+                <span class="tag-filter-toggle-arrow" aria-hidden="true">▾</span>
+            </button>
+            <div class="tag-filter-panel" id="tagFilterPanel" hidden>
+                <div class="tag-filter-selected-row" id="tagFilterSelectedRow" hidden>
+                    <span class="tag-filter-selected-label">選択中</span>
+                    <div class="tag-filter-selected" id="tagFilterSelected"></div>
+                    <button type="button" class="tag-filter-clear-btn" id="tagFilterClearBtn">すべて解除</button>
+                </div>
+                <div class="tag-filter-cats" id="tagFilterCats">
+                    <!-- JSで生成 -->
+                </div>
             </div>
         </div>
         <div class="result-count">

@@ -1934,6 +1934,253 @@ a.bi-row:hover {
 }
 
 /* =====================================================
+   タグフィルター（公開側、折りたたみ式）
+   ===================================================== */
+.tag-filter-wrap {
+    max-width: 1280px;
+    margin: 12px auto 0;
+}
+
+.tag-filter-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-soft);
+    border: 1.5px solid var(--border);
+    border-radius: 100px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition);
+    font-family: inherit;
+}
+
+.tag-filter-toggle:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--bg-white);
+}
+
+.tag-filter-wrap.is-open .tag-filter-toggle {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.tag-filter-toggle-icon { font-size: 0.95rem; }
+
+.tag-filter-toggle-count {
+    background: #E0245E;
+    color: #fff;
+    border-radius: 100px;
+    min-width: 20px;
+    text-align: center;
+    padding: 0 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 18px;
+}
+
+.tag-filter-toggle-arrow {
+    font-size: 0.65rem;
+    transition: transform 0.2s ease;
+}
+
+.tag-filter-wrap.is-open .tag-filter-toggle-arrow {
+    transform: rotate(180deg);
+}
+
+.tag-filter-panel {
+    margin-top: 12px;
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    box-shadow: var(--shadow-sm);
+}
+
+.tag-filter-panel[hidden] { display: none; }
+
+.tag-filter-selected-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px dashed var(--border);
+}
+
+.tag-filter-selected-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+}
+
+.tag-filter-selected {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+
+.tag-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--tag-color, #888);
+    color: #fff;
+    border-radius: 100px;
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.tag-filter-chip:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+}
+
+.tag-filter-chip-x { font-size: 0.9rem; line-height: 1; opacity: 0.85; }
+
+.tag-filter-clear-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 4px 10px;
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+}
+
+.tag-filter-clear-btn:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-secondary);
+}
+
+.tag-filter-cats {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.tag-filter-cat {
+    border-bottom: 1px dashed var(--border-light);
+    padding-bottom: 6px;
+}
+
+.tag-filter-cat:last-child { border-bottom: none; }
+
+.tag-filter-cat-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 6px 4px;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s ease;
+    border-radius: 6px;
+}
+
+.tag-filter-cat-header:hover {
+    background: var(--bg-soft);
+}
+
+.tag-filter-cat-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+.tag-filter-cat-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.tag-filter-cat-badge {
+    background: var(--primary);
+    color: #fff;
+    border-radius: 100px;
+    min-width: 20px;
+    text-align: center;
+    padding: 0 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 18px;
+}
+
+.tag-filter-cat-arrow {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    transition: transform 0.2s ease;
+}
+
+.tag-filter-cat.is-collapsed .tag-filter-cat-arrow {
+    transform: rotate(-90deg);
+}
+
+.tag-filter-cat-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 4px 4px 22px;
+}
+
+.tag-filter-cat-pills[hidden] { display: none; }
+
+.tag-filter-pick {
+    background: var(--bg-soft);
+    border: 1.5px solid var(--border);
+    border-radius: 100px;
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+}
+
+.tag-filter-pick:hover {
+    border-color: var(--tag-color, var(--primary));
+    color: var(--tag-color, var(--primary));
+    background: #fff;
+}
+
+.tag-filter-pick.is-selected {
+    background: var(--tag-color, var(--primary));
+    border-color: var(--tag-color, var(--primary));
+    color: #fff;
+    font-weight: 700;
+}
+
+@media (max-width: 768px) {
+    .tag-filter-wrap { margin: 10px 16px 0; }
+    .tag-filter-cat-pills { padding-left: 18px; }
+    .tag-filter-cats { max-height: 360px; }
+}
+
+/* =====================================================
    タグ表示（公開側）
    ===================================================== */
 /* カード一覧：オーバーレイ内のコンパクトなタグ群（最大3つ + N） */

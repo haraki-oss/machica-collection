@@ -21,7 +21,10 @@ let state = {
     mapsLoaded: false,
     showLikedOnly: false, // MY LIKES モード
     tags: [],          // タグ一覧（初期データ + Supabase 由来をマージ済み）
-    tagById: new Map() // id → tag のルックアップ
+    tagById: new Map(), // id → tag のルックアップ
+    selectedTagIds: new Set(),     // 公開側タグフィルター：選択中のタグID
+    tagFilterCollapsedCats: new Set(), // 公開側タグフィルター：折りたたみ中のカテゴリ key
+    tagFilterOpen: false,          // タグフィルターパネルの開閉
 };
 
 // ── Google Maps APIキー ──────────────────────────
@@ -48,6 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     populateAreaFilter();
     populateStaffFilter();
     bindEvents();
+    bindTagFilterEvents();
     loadGoogleMapsAPI();
 });
 
@@ -99,6 +103,116 @@ function renderTagPills(card, opts) {
 function escapeHtmlSafe(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
+
+// ── タグフィルター（公開側、折りたたみ） ─────────────
+function bindTagFilterEvents() {
+    const toggle = document.getElementById('tagFilterToggle');
+    const panel  = document.getElementById('tagFilterPanel');
+    const wrap   = document.getElementById('tagFilterWrap');
+    const clearBtn = document.getElementById('tagFilterClearBtn');
+
+    toggle?.addEventListener('click', () => {
+        state.tagFilterOpen = !state.tagFilterOpen;
+        panel.hidden = !state.tagFilterOpen;
+        toggle.setAttribute('aria-expanded', state.tagFilterOpen ? 'true' : 'false');
+        wrap.classList.toggle('is-open', state.tagFilterOpen);
+        if (state.tagFilterOpen) renderTagFilterPanel();
+    });
+
+    clearBtn?.addEventListener('click', () => {
+        state.selectedTagIds.clear();
+        renderTagFilterPanel();
+        renderTagFilterSelected();
+        applyFilters();
+    });
+
+    // 初期描画（パネル中身）
+    renderTagFilterPanel();
+}
+
+function renderTagFilterPanel() {
+    const root = document.getElementById('tagFilterCats');
+    if (!root) return;
+
+    const cats = (typeof TAG_CATEGORIES !== 'undefined' ? TAG_CATEGORIES : []);
+    const tagsByCat = {};
+    for (const c of cats) tagsByCat[c.key] = [];
+    for (const t of state.tags) {
+        if (tagsByCat[t.category]) tagsByCat[t.category].push(t);
+    }
+
+    root.innerHTML = cats.map(cat => {
+        const items = tagsByCat[cat.key] || [];
+        if (items.length === 0) return '';
+        const collapsed = state.tagFilterCollapsedCats.has(cat.key);
+        const selectedInCat = items.filter(t => state.selectedTagIds.has(t.id)).length;
+        return `
+        <div class="tag-filter-cat ${collapsed ? 'is-collapsed' : ''}" data-cat="${cat.key}">
+            <button type="button" class="tag-filter-cat-header" onclick="window.toggleTagFilterCat('${cat.key}')">
+                <span class="tag-filter-cat-color" style="background:${cat.color}"></span>
+                <span class="tag-filter-cat-name">${escapeHtmlSafe(cat.name)}</span>
+                ${selectedInCat > 0 ? `<span class="tag-filter-cat-badge">${selectedInCat}</span>` : ''}
+                <span class="tag-filter-cat-arrow" aria-hidden="true">▼</span>
+            </button>
+            <div class="tag-filter-cat-pills" ${collapsed ? 'hidden' : ''}>
+                ${items.map(t => {
+                    const color = t.color || cat.color;
+                    const sel = state.selectedTagIds.has(t.id);
+                    return `<button type="button" class="tag-filter-pick ${sel ? 'is-selected' : ''}" style="--tag-color:${color}" data-id="${escapeHtmlSafe(t.id)}" onclick="window.toggleTagFilterPick('${escapeHtmlSafe(t.id)}')">${escapeHtmlSafe(t.name)}</button>`;
+                }).join('')}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderTagFilterSelected() {
+    const row = document.getElementById('tagFilterSelectedRow');
+    const list = document.getElementById('tagFilterSelected');
+    if (!row || !list) return;
+
+    if (!state.selectedTagIds || state.selectedTagIds.size === 0) {
+        row.hidden = true;
+        list.innerHTML = '';
+        return;
+    }
+
+    row.hidden = false;
+    list.innerHTML = Array.from(state.selectedTagIds).map(id => {
+        const t = state.tagById.get(id);
+        if (!t) return '';
+        const color = t.color || (TAG_CATEGORY_MAP?.[t.category]?.color) || '#888';
+        return `<button type="button" class="tag-filter-chip" style="--tag-color:${color}" onclick="window.toggleTagFilterPick('${escapeHtmlSafe(id)}')">
+            <span>${escapeHtmlSafe(t.name)}</span>
+            <span class="tag-filter-chip-x" aria-hidden="true">×</span>
+        </button>`;
+    }).join('');
+}
+
+function updateTagFilterCount() {
+    const badge = document.getElementById('tagFilterCount');
+    if (!badge) return;
+    const n = state.selectedTagIds ? state.selectedTagIds.size : 0;
+    if (n > 0) {
+        badge.textContent = String(n);
+        badge.hidden = false;
+    } else {
+        badge.hidden = true;
+    }
+}
+
+window.toggleTagFilterCat = (key) => {
+    if (state.tagFilterCollapsedCats.has(key)) state.tagFilterCollapsedCats.delete(key);
+    else state.tagFilterCollapsedCats.add(key);
+    renderTagFilterPanel();
+};
+
+window.toggleTagFilterPick = (id) => {
+    if (state.selectedTagIds.has(id)) state.selectedTagIds.delete(id);
+    else state.selectedTagIds.add(id);
+    renderTagFilterPanel();
+    renderTagFilterSelected();
+    applyFilters();
+};
 
 async function initCards() {
     // IndexedDB からカスタムカードと設定情報を取得
@@ -764,17 +878,39 @@ function applyFilters() {
     const kw = state.keyword.toLowerCase();
     const likedSet = state.showLikedOnly ? getLocalLiked() : null;
 
+    // タグフィルター用：選択中タグをカテゴリ別にグループ化
+    // 同カテゴリ内は OR、別カテゴリ間は AND（典型的なファセット検索）
+    const selectedByCategory = {};
+    if (state.selectedTagIds && state.selectedTagIds.size > 0) {
+        for (const id of state.selectedTagIds) {
+            const tag = state.tagById.get(id);
+            if (!tag) continue;
+            (selectedByCategory[tag.category] ||= []).push(id);
+        }
+    }
+    const tagFilterActive = Object.keys(selectedByCategory).length > 0;
+
     state.filtered = state.cards.filter(card => {
         if (likedSet && !likedSet.has(String(card.id))) return false;
         const matchKeyword = !kw || card.title.toLowerCase().includes(kw) || card.description.toLowerCase().includes(kw);
         const matchGenre = state.genre === 'all' || card.category_id == state.genre;
         const matchArea = state.area === 'all' || card.area === state.area;
         const matchStaff = state.staff === 'all' || (card.recommended_by || '').trim() === state.staff;
-        return matchKeyword && matchGenre && matchArea && matchStaff;
+        if (!(matchKeyword && matchGenre && matchArea && matchStaff)) return false;
+
+        if (tagFilterActive) {
+            const cardTagIds = Array.isArray(card.tags) ? card.tags : [];
+            for (const cat in selectedByCategory) {
+                const ids = selectedByCategory[cat];
+                if (!ids.some(id => cardTagIds.includes(id))) return false;
+            }
+        }
+        return true;
     });
 
     renderCards(state.filtered);
     updateMyLikesUI();
+    updateTagFilterCount();
 }
 
 function resetFilters() {
@@ -782,6 +918,9 @@ function resetFilters() {
     state.genre = 'all';
     state.area = 'all';
     state.staff = 'all';
+    if (state.selectedTagIds) state.selectedTagIds.clear();
+    renderTagFilterPanel();
+    renderTagFilterSelected();
     document.getElementById('searchInput').value = '';
     document.getElementById('searchClear').classList.remove('visible');
     document.getElementById('areaSelect').value = 'all';
