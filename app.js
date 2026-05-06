@@ -455,15 +455,17 @@ function bindMyLikes() {
     const bannerClose = document.getElementById('myLikesBannerClose');
     const exitBtn = document.getElementById('exitMyLikes');
 
+    // MY LIKES の開閉では他のフィルター（エリア・ジャンル・キーワード・スタッフ・タグ）を
+    // すべて解除して、お気に入りだけが見える / 全スポットだけが見える状態に戻す。
     toggle?.addEventListener('click', () => {
         state.showLikedOnly = !state.showLikedOnly;
-        applyFilters();
+        resetFilters();   // resetFilters の中で applyFilters まで呼ばれる
     });
 
     const exitMyLikes = () => {
         if (!state.showLikedOnly) return;
         state.showLikedOnly = false;
-        applyFilters();
+        resetFilters();
     };
     bannerClose?.addEventListener('click', exitMyLikes);
     exitBtn?.addEventListener('click', exitMyLikes);
