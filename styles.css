@@ -1932,3 +1932,66 @@ a.bi-row:hover {
     vertical-align: middle;
     margin-right: 6px;
 }
+
+/* =====================================================
+   タグ表示（公開側）
+   ===================================================== */
+/* カード一覧：オーバーレイ内のコンパクトなタグ群（最大3つ + N） */
+.card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.card-tag-pill {
+    background: var(--tag-color, #888);
+    color: #fff;
+    border-radius: 100px;
+    padding: 2px 8px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 90px;
+}
+
+.card-tag-pill.is-compact {
+    font-size: 0.62rem;
+    padding: 1px 7px;
+}
+
+.card-tag-more {
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    border-radius: 100px;
+    padding: 2px 8px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.5;
+    backdrop-filter: blur(4px);
+}
+
+/* モーダル：本文の下、住所の上にタグ群を表示 */
+.modal-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.modal-tags .card-tag-pill {
+    font-size: 0.78rem;
+    padding: 4px 12px;
+    max-width: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 480px) {
+    .card-tags { gap: 3px; margin-top: 4px; }
+    .card-tag-pill { font-size: 0.6rem; padding: 1px 6px; max-width: 70px; }
+}

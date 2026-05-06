@@ -20,6 +20,8 @@ let state = {
     marker: null,
     mapsLoaded: false,
     showLikedOnly: false, // MY LIKES モード
+    tags: [],          // タグ一覧（初期データ + Supabase 由来をマージ済み）
+    tagById: new Map() // id → tag のルックアップ
 };
 
 // ── Google Maps APIキー ──────────────────────────
@@ -40,6 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (savedLang === 'en') state.lang = 'en';
     updateLanguageUI();
 
+    await initTags();   // カード描画前にタグを読み込んでおく
     await initCards();
     renderGenreButtons();
     populateAreaFilter();
@@ -47,6 +50,55 @@ document.addEventListener('DOMContentLoaded', async () => {
     bindEvents();
     loadGoogleMapsAPI();
 });
+
+// ── タグ初期化 ─────────────────────────────────────
+async function initTags() {
+    try {
+        const customTags = await machicaDB.getAll('tags');
+        const settings = await machicaDB.getAll('settings');
+        const deletedIds = settings.find(s => s.id === 'deleted_tag_ids')?.value || [];
+        const overrides  = settings.find(s => s.id === 'tag_overrides')?.value || {};
+
+        const seedTags = (typeof TAGS_DATA !== 'undefined' ? TAGS_DATA : [])
+            .filter(t => !deletedIds.includes(t.id))
+            .map(t => {
+                const ov = overrides[t.id];
+                return ov ? { ...t, ...ov } : t;
+            });
+
+        const customIds = new Set(customTags.map(t => t.id));
+        state.tags = [...seedTags.filter(t => !customIds.has(t.id)), ...customTags];
+        state.tagById = new Map(state.tags.map(t => [t.id, t]));
+    } catch (e) {
+        // tags テーブル未作成等のエラーは握りつぶし、初期データのみで動かす
+        console.warn('initTags: failed to load custom tags, using seed only.', e);
+        state.tags = (typeof TAGS_DATA !== 'undefined' ? TAGS_DATA : []).slice();
+        state.tagById = new Map(state.tags.map(t => [t.id, t]));
+    }
+}
+
+// カード -> タグ id 配列を引いて、表示用オブジェクトの配列に変換
+function getCardTags(card) {
+    const ids = Array.isArray(card?.tags) ? card.tags : [];
+    return ids.map(id => state.tagById.get(id)).filter(Boolean);
+}
+
+function renderTagPills(card, opts) {
+    const tags = getCardTags(card);
+    if (!tags.length) return '';
+    const limit = opts && opts.limit ? opts.limit : tags.length;
+    const variant = (opts && opts.variant) || 'default'; // 'default' | 'compact'
+    const visible = tags.slice(0, limit);
+    const overflow = tags.length - visible.length;
+    return visible.map(t => {
+        const color = t.color || (typeof TAG_CATEGORY_MAP !== 'undefined' ? TAG_CATEGORY_MAP[t.category]?.color : '') || '#888';
+        return `<span class="card-tag-pill ${variant === 'compact' ? 'is-compact' : ''}" style="--tag-color:${color}">${escapeHtmlSafe(t.name)}</span>`;
+    }).join('') + (overflow > 0 ? `<span class="card-tag-more">+${overflow}</span>` : '');
+}
+
+function escapeHtmlSafe(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
 
 async function initCards() {
     // IndexedDB からカスタムカードと設定情報を取得
@@ -810,6 +862,10 @@ function createCardHTML(card, index) {
           <!-- スポット名オーバーレイ -->
           <div class="card-name-overlay">
             <h3 class="card-overlay-title">${title}</h3>
+            ${(() => {
+                const pills = renderTagPills(card, { limit: 3, variant: 'compact' });
+                return pills ? `<div class="card-tags">${pills}</div>` : '';
+            })()}
           </div>
         </div>
 
@@ -941,6 +997,19 @@ function openModal(cardId) {
     document.getElementById('modalTitle').textContent = title;
     document.getElementById('modalDescription').textContent = desc;
     document.getElementById('modalArea').textContent = areaName;
+
+    // モーダル内のタグ表示
+    const tagsEl = document.getElementById('modalTags');
+    if (tagsEl) {
+        const pills = renderTagPills(card, { variant: 'default' });
+        if (pills) {
+            tagsEl.innerHTML = pills;
+            tagsEl.style.display = '';
+        } else {
+            tagsEl.innerHTML = '';
+            tagsEl.style.display = 'none';
+        }
+    }
 
     // レコメンドスタッフ（任意項目）。空の場合は要素ごと非表示。
     // クリックでそのスタッフのフィルターを適用しモーダルを閉じる。

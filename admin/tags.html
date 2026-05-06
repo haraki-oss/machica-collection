@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>タグ管理 | machica Admin</title>
+    <link rel="stylesheet" href="admin.css" />
+    <script src="auth.js"></script>
+</head>
+
+<body>
+
+    <!-- サイドバー -->
+    <aside class="admin-sidebar">
+        <div class="sidebar-logo">
+            <span>🗾</span>
+            <span>machica</span>
+            <span style="font-size:0.7rem;font-weight:500;color:#A1A3A0;margin-left:auto;">Admin</span>
+        </div>
+        <nav class="sidebar-nav">
+            <p class="sidebar-section-label">メニュー</p>
+            <a href="index.html" class="sidebar-link">📊 ダッシュボード</a>
+            <a href="cards.html" class="sidebar-link">🃏 カード管理</a>
+            <a href="cards-new.html" class="sidebar-link">➕ カード登録</a>
+            <a href="cards-scan.html" class="sidebar-link" style="display:none;">📷 スキャン登録</a>
+            <a href="categories.html" class="sidebar-link">🏷️ カテゴリー管理</a>
+            <a href="tags.html" class="sidebar-link active">🔖 タグ管理</a>
+            <a href="areas.html" class="sidebar-link">🌐 エリア管理</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="../index.html">🌐 公開サイトを見る</a>
+        </div>
+    </aside>
+
+    <!-- コンテンツ -->
+    <div class="admin-content">
+        <header class="admin-topbar">
+            <span class="topbar-title">タグ管理</span>
+        </header>
+
+        <main class="admin-main">
+            <div class="page-header">
+                <div class="page-header-text">
+                    <h1>タグ管理</h1>
+                    <p>カードに付けられるタグをカテゴリ別に管理します。<br>
+                       カード編集画面ではここで定義したタグから選んで紐付けできます（1カード最大5タグ／ジャンル必須）。</p>
+                </div>
+            </div>
+
+            <!-- タグ追加・編集フォーム -->
+            <div class="form-card" style="margin-bottom:24px;">
+                <p class="form-section-title" id="tagFormTitle">➕ 新規タグ追加</p>
+                <form id="tagForm" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; align-items:flex-end;">
+                    <input type="hidden" id="editTagId" value="" />
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" for="tagName">タグ名 <span class="required">*</span></label>
+                        <input type="text" id="tagName" class="form-control" placeholder="例：朝活" required />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" for="tagCategory">カテゴリ <span class="required">*</span></label>
+                        <select id="tagCategory" class="form-control" required>
+                            <!-- JSで生成 -->
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" for="tagColor">表示色（任意）</label>
+                        <div style="display:flex; gap:8px;">
+                            <input type="color" id="tagColor" class="form-control" style="width:50px; padding:2px;" value="#FF6B6B" />
+                            <input type="text" id="tagColorHex" class="form-control" placeholder="カテゴリ色" value="" />
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button type="submit" class="btn-primary" id="tagSubmitBtn" style="height:42px; flex:1;">追加する</button>
+                        <button type="button" class="btn-secondary" id="tagCancelBtn" style="height:42px; display:none;">取消</button>
+                    </div>
+                </form>
+                <p style="font-size:0.78rem; color:var(--text-muted); margin:12px 0 0;">
+                    ※ 表示色を空にするとカテゴリのデフォルト色が使われます。
+                </p>
+            </div>
+
+            <!-- タグ検索 -->
+            <div class="form-card" style="margin-bottom:24px; padding:16px 20px;">
+                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                    <input type="text" id="tagSearchInput" class="form-control" placeholder="🔍 タグ名で検索…" style="flex:1; min-width:200px;" />
+                    <button type="button" class="btn-secondary" id="tagExpandAllBtn">すべて展開</button>
+                    <button type="button" class="btn-secondary" id="tagCollapseAllBtn">すべて折りたたむ</button>
+                </div>
+            </div>
+
+            <!-- タグ一覧（カテゴリ別折りたたみ） -->
+            <div id="tagCategoryList">
+                <!-- JSで生成 -->
+            </div>
+        </main>
+    </div>
+
+    <!-- 削除確認モーダル -->
+    <div id="tagDeleteModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">タグの削除</h3>
+            </div>
+            <div class="modal-body">
+                <p id="tagDeleteConfirmText"></p>
+                <p style="color:var(--danger);font-size:0.8rem;margin-top:8px;">
+                    ※ このタグを使用しているカードからはタグが外れます（カードは消えません）。
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="tagDeleteCancelBtn">キャンセル</button>
+                <button class="btn-primary danger" id="tagDeleteConfirmBtn">削除する</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="admin-account.js"></script>
+    <script src="db.js"></script>
+    <script src="../data/tags.js"></script>
+    <script src="admin-tags.js"></script>
+</body>
+
+</html>

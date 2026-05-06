@@ -11,6 +11,9 @@ window.onerror = function (msg, url, line) {
     return false;
 };
 
+// グローバル：タグセレクターのインスタンス
+let tagSelector = null;
+
 document.addEventListener('DOMContentLoaded', async () => {
     // IDをパラメータから取得
     const params = new URLSearchParams(window.location.search);
@@ -28,6 +31,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. データの初期化
     await populateCategorySelect();
     await populateAreaSelect();
+
+    // 3. タグセレクター（先にマウント。loadCardData の中で setSelected する）
+    if (window.TagSelector) {
+        tagSelector = await window.TagSelector.mount('#tagSelectorCard');
+    }
+
     await loadCardData();
     bindUploadEvents();
     bindFormEvents();
@@ -94,6 +103,11 @@ async function loadCardData() {
     if (card.gallery || card.gallery_images) {
         galleryImages = [...(card.gallery || card.gallery_images)];
         renderGalleryGrid();
+    }
+
+    // タグの復元
+    if (tagSelector) {
+        tagSelector.setSelected(Array.isArray(card.tags) ? card.tags : []);
     }
 }
 
@@ -277,6 +291,15 @@ function bindFormEvents() {
             return;
         }
 
+        // タグ必須チェック（ジャンル必須）
+        if (tagSelector) {
+            const v = tagSelector.validate();
+            if (!v.ok) {
+                showFormMessage(v.message, 'error');
+                return;
+            }
+        }
+
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
         btn.textContent = '保存中...';
@@ -302,6 +325,7 @@ function bindFormEvents() {
             image_url: imageBase64,
             image_url_back: imageBase64Back,
             gallery: galleryImages,
+            tags: tagSelector ? tagSelector.getSelected() : [],
             updated_at: new Date().toISOString()
         };
 

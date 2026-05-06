@@ -22,6 +22,9 @@ window.onerror = function (msg, url, line) {
     return false;
 };
 
+// グローバル：タグセレクターのインスタンス
+let tagSelector = null;
+
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. 移行の実行
     await migrateLocalStorageToIndexedDB();
@@ -35,6 +38,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     bindAutoGeoOnBlur(); // 住所入力時の自動検索を追加
     bindAutoTranslate(); // 自動翻訳
     bindGMapPaste();     // Google Maps 貼り付け
+
+    // 3. タグセレクター
+    if (window.TagSelector) {
+        tagSelector = await window.TagSelector.mount('#tagSelectorCard');
+    }
 });
 
 // ── カテゴリーセレクトを生成 ───────────────────────
@@ -248,6 +256,15 @@ function bindFormEvents() {
             return;
         }
 
+        // タグ必須チェック（ジャンル必須）
+        if (tagSelector) {
+            const v = tagSelector.validate();
+            if (!v.ok) {
+                showFormMessage(v.message, 'error');
+                return;
+            }
+        }
+
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
         btn.textContent = '保存中...';
@@ -273,6 +290,7 @@ function bindFormEvents() {
             image_url: imageBase64,
             image_url_back: imageBase64Back,
             gallery: galleryImages,
+            tags: tagSelector ? tagSelector.getSelected() : [],
             created_at: new Date().toISOString()
         };
 

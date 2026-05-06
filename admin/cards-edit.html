@@ -132,6 +132,7 @@
             <a href="cards.html" class="sidebar-link active">🃏 カード管理</a>
             <a href="cards-new.html" class="sidebar-link">➕ カード登録</a>
             <a href="cards-scan.html" class="sidebar-link" style="display:none;">📷 スキャン登録</a><a href="categories.html" class="sidebar-link">🏷️ カテゴリー管理</a>
+            <a href="tags.html" class="sidebar-link">🔖 タグ管理</a>
             <a href="areas.html" class="sidebar-link">🌐 エリア管理</a>
         </nav>
         <div class="sidebar-footer">
@@ -366,6 +367,24 @@
                     </div>
                 </div>
 
+                <!-- ④ タグ -->
+                <div class="form-card" style="margin-bottom:20px;">
+                    <p class="form-section-title">🔖 タグ <span style="font-size:0.78rem;color:var(--text-muted);font-weight:500;">（最大5つ／ジャンル必須・感情1つ以上推奨）</span></p>
+                    <div class="tag-selector" id="tagSelectorCard"
+                         data-max="5"
+                         data-required-categories="genre"
+                         data-recommended-categories="emotion">
+                        <div class="tag-selector-header">
+                            <input type="text" class="tag-selector-search" id="tagSearchInput" placeholder="🔍 タグを検索…" />
+                            <span class="tag-selector-status" id="tagSelectorStatus">0 / 5</span>
+                        </div>
+                        <div class="tag-selector-selected" id="tagSelectedList"></div>
+                        <div class="tag-selector-categories" id="tagSelectorCats">
+                            <p style="color:var(--text-muted);font-size:0.85rem;padding:8px;">読み込み中…</p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 送信 -->
                 <div class="form-card">
                     <div id="formMessage"
@@ -387,7 +406,9 @@
     <script src="migration.js"></script>
     <script src="../data/categories.js"></script>
     <script src="../data/areas.js"></script>
+    <script src="../data/tags.js"></script>
     <script src="../data/cards.js"></script>
+    <script src="admin-tag-selector.js"></script>
     <script src="admin-edit-card.js"></script>
 </body>
 
