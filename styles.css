@@ -553,8 +553,9 @@ button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 6px;
     height: 36px;
-    padding: 0 14px;
+    padding: 0 14px 0 10px;
     box-sizing: border-box;
     border-radius: 100px;
     font-size: 0.85rem;
@@ -569,6 +570,11 @@ button {
     letter-spacing: 0.02em;
 }
 
+/* アイコン無しのボタン（"すべて" など）はパディング均等に */
+.genre-btn:not(:has(.category-icon-img)):not(:has(.category-icon-emoji)) {
+    padding: 0 14px;
+}
+
 .genre-btn:hover {
     border-color: var(--primary);
     color: var(--primary);
@@ -580,6 +586,27 @@ button {
     border-color: var(--primary);
     color: #fff;
     box-shadow: 0 2px 8px rgba(30, 27, 25, 0.3);
+}
+
+/* ジャンルアイコン：すべてのカテゴリで同じサイズ・形に揃える */
+.genre-btn .category-icon-img {
+    width: 22px;
+    height: 22px;
+    object-fit: cover;
+    border-radius: 50%;
+    background: var(--bg-soft);
+    flex-shrink: 0;
+}
+
+.genre-btn .category-icon-emoji {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    line-height: 1;
+    flex-shrink: 0;
 }
 
 /* エリアセレクト（検索ボックスと高さを揃える） */
