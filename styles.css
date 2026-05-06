@@ -376,14 +376,16 @@ button {
     align-items: stretch;
 }
 
-.filter-primary-row .search-box {
-    flex: 1;
-    max-width: none;
+/* 検索 / エリア両方を 1:1 で並べる（サイズ統一） */
+.filter-primary-row .search-box,
+.filter-primary-row .area-filter-wrap {
+    flex: 1 1 0;
     min-width: 0;
+    max-width: none;
 }
 
-.filter-primary-row .area-filter-wrap {
-    flex: 0 0 auto;
+.filter-primary-row .area-select {
+    width: 100%;
 }
 
 /* 2段目：スタッフフィルター（控えめなサブ行・既存スタイル流用） */

@@ -66,17 +66,17 @@
     <!-- 検索・フィルターセクション -->
     <section class="filter-section">
         <div class="filter-inner">
-            <!-- 1段目：検索ボックス + エリアセレクト（同じ高さで横並び） -->
+            <!-- 1段目：エリアセレクト + 検索ボックス（同じ幅で横並び） -->
             <div class="filter-primary-row">
-                <div class="search-box">
-                    <span class="search-icon" aria-hidden="true">🔍</span>
-                    <input type="text" id="searchInput" class="search-input" placeholder="スポット名・キーワードで検索…" />
-                    <button class="search-clear" id="searchClear" aria-label="クリア">✕</button>
-                </div>
                 <div class="area-filter-wrap">
                     <select class="area-select" id="areaSelect" aria-label="エリアで絞り込み">
                         <option value="all">エリア（全国）</option>
                     </select>
+                </div>
+                <div class="search-box">
+                    <span class="search-icon" aria-hidden="true">🔍</span>
+                    <input type="text" id="searchInput" class="search-input" placeholder="スポット名・キーワードで検索…" />
+                    <button class="search-clear" id="searchClear" aria-label="クリア">✕</button>
                 </div>
             </div>
 
