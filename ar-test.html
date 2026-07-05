@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AR動作確認用カード | machica collection</title>
+<style>
+    :root {
+        --primary: #1E1B19;
+        --text-secondary: #5A5854;
+        --bg-base: #FAFAF9;
+        --bg-white: #FFFFFF;
+        --border: #E5E4E1;
+        --radius-md: 14px;
+        --shadow-md: 0 4px 16px rgba(30, 27, 25, 0.08), 0 2px 6px rgba(30, 27, 25, 0.04);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+        background: var(--bg-base); color: var(--primary);
+        padding: 36px 20px 60px; max-width: 860px; margin: 0 auto;
+    }
+    h1 { font-size: 1.25rem; margin-bottom: 6px; }
+    .lead { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.8; margin-bottom: 26px; }
+    .steps {
+        background: var(--bg-white); border: 1px solid var(--border);
+        border-radius: var(--radius-md); box-shadow: var(--shadow-md);
+        padding: 20px 24px; margin-bottom: 30px;
+    }
+    .steps ol { padding-left: 1.4em; }
+    .steps li { font-size: 0.92rem; line-height: 2; }
+    .steps b { background: #F0F0EE; border-radius: 6px; padding: 1px 8px; }
+    .cards { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; }
+    .cards figure { text-align: center; }
+    .cards img {
+        width: min(90vw, 380px); display: block;
+        border-radius: 12px; box-shadow: var(--shadow-md);
+    }
+    .cards figcaption { margin-top: 10px; font-size: 0.88rem; color: var(--text-secondary); }
+    .note { margin-top: 30px; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.8; }
+</style>
+</head>
+<body>
+    <h1>AR動作確認用カード</h1>
+    <p class="lead">
+        このページを<strong>パソコンの画面</strong>に表示したまま、<strong>スマホでARスキャン画面を開いて</strong>下のカード画像にかざしてください。
+    </p>
+
+    <div class="steps">
+        <ol>
+            <li>スマホのカメラアプリで下のQRコードを読むか、ブラウザで <b>machica-collection.vercel.app/ar.html</b> を開く</li>
+            <li>「カメラの使用を許可しますか？」→ <b>許可</b> を選ぶ</li>
+            <li>スマホを、下のカード画像に <b>20〜40cmくらいの距離</b> でかざす（枠にカード全体が入るように）</li>
+            <li>カードの上で動画が再生され、画面の下からお店の情報が出てきたら成功です</li>
+        </ol>
+    </div>
+
+    <div class="cards">
+        <figure>
+            <img src="assets/ar/card1.jpg" alt="テストカード1: 炉端焼き 漁火">
+            <figcaption>テストカード ①「炉端焼き 漁火」</figcaption>
+        </figure>
+        <figure>
+            <img src="assets/ar/card2.jpg" alt="テストカード2: 森の隠れ家カフェ ふじの杜">
+            <figcaption>テストカード ②「森の隠れ家カフェ ふじの杜」</figcaption>
+        </figure>
+    </div>
+
+    <div class="cards" style="margin-top: 34px;">
+        <figure>
+            <img style="width: 180px; box-shadow: none; border: 1px solid var(--border);"
+                 src="https://api.qrserver.com/v1/create-qr-code/?size=360x360&data=https%3A%2F%2Fmachica-collection.vercel.app%2Far.html"
+                 alt="ARスキャン画面のQRコード">
+            <figcaption>スマホでこのQRを読むと<br>ARスキャン画面が開きます</figcaption>
+        </figure>
+    </div>
+
+    <p class="note">
+        ※ スマホ1台では「画像を表示する役」と「スキャンする役」を同時にできないため、カード画像はPC画面か印刷物で用意してください。<br>
+        ※ 画面の明るさを上げると認識しやすくなります。反射で認識しづらい場合は画面の角度を少し変えてください。<br>
+        ※ 現在はテスト用カード2枚のみ対応しています（実際のmachicaカードはまだ認識しません）。
+    </p>
+</body>
+</html>
