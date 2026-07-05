@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARターゲット生成 | machica 管理</title>
+<style>
+    :root {
+        --primary: #1E1B19;
+        --text-secondary: #5A5854;
+        --bg-base: #FAFAF9;
+        --bg-white: #FFFFFF;
+        --border: #E5E4E1;
+        --radius-md: 14px;
+        --shadow-md: 0 4px 16px rgba(30, 27, 25, 0.08), 0 2px 6px rgba(30, 27, 25, 0.04);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+        background: var(--bg-base);
+        color: var(--primary);
+        padding: 40px 20px;
+        max-width: 720px;
+        margin: 0 auto;
+    }
+    h1 { font-size: 1.3rem; margin-bottom: 8px; }
+    p.desc { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 24px; line-height: 1.7; }
+    .panel {
+        background: var(--bg-white);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-md);
+        padding: 24px;
+        margin-bottom: 20px;
+    }
+    .thumbs { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+    .thumbs figure { width: 140px; }
+    .thumbs img { width: 100%; border-radius: 8px; border: 1px solid var(--border); display: block; }
+    .thumbs figcaption { font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px; word-break: break-all; }
+    button {
+        background: var(--primary); color: #fff; border: none;
+        border-radius: 999px; padding: 12px 28px; font-size: 0.95rem;
+        cursor: pointer; transition: opacity 0.2s;
+    }
+    button:disabled { opacity: 0.4; cursor: default; }
+    #progress { font-size: 0.9rem; margin-top: 14px; color: var(--text-secondary); min-height: 1.4em; }
+    #bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+    #bar > i { display: block; height: 100%; width: 0; background: var(--primary); transition: width 0.3s; }
+    a.dl {
+        display: inline-block; margin-top: 16px; color: var(--primary); font-weight: 600;
+    }
+</style>
+</head>
+<body>
+    <h1>ARターゲット生成ツール</h1>
+    <p class="desc">
+        カード表面の画像から、ARスキャン用のターゲットファイル（targets.mind）を生成します。<br>
+        生成したファイルは <code>assets/ar/targets.mind</code> に配置してください。
+        画像の<strong>並び順がそのまま targetIndex（0, 1, 2...）になる</strong>ため、ar-app.js の AR_CARDS の順序と一致させること。
+    </p>
+
+    <div class="panel">
+        <input type="file" id="fileInput" accept="image/*" multiple>
+        <div class="thumbs" id="thumbs"></div>
+        <button id="compileBtn" disabled>コンパイル開始</button>
+        <div id="progress"></div>
+        <div id="bar"><i></i></div>
+        <div id="result"></div>
+    </div>
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+}
+</script>
+<script type="module">
+import { Compiler } from 'https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js';
+(function () {
+    const fileInput = document.getElementById('fileInput');
+    const thumbs = document.getElementById('thumbs');
+    const btn = document.getElementById('compileBtn');
+    const progress = document.getElementById('progress');
+    const barFill = document.querySelector('#bar > i');
+    const result = document.getElementById('result');
+
+    let images = [];
+
+    // 自動モード用の状態（ヘッドレス実行から window 経由で参照する）
+    window.__status = 'idle';
+    window.__progress = 0;
+    window.__mind = null;
+
+    function loadImageFromUrl(url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('load failed: ' + url));
+            img.src = url;
+        });
+    }
+
+    function addThumb(src, label) {
+        const fig = document.createElement('figure');
+        const img = document.createElement('img');
+        img.src = src;
+        const cap = document.createElement('figcaption');
+        cap.textContent = label;
+        fig.appendChild(img);
+        fig.appendChild(cap);
+        thumbs.appendChild(fig);
+    }
+
+    fileInput.addEventListener('change', async () => {
+        thumbs.innerHTML = '';
+        images = [];
+        for (const file of fileInput.files) {
+            const url = URL.createObjectURL(file);
+            const img = await loadImageFromUrl(url);
+            images.push(img);
+            addThumb(url, file.name);
+        }
+        btn.disabled = images.length === 0;
+    });
+
+    async function compile(imgs) {
+        window.__status = 'compiling';
+        btn.disabled = true;
+        const compiler = new Compiler();
+        await compiler.compileImageTargets(imgs, (p) => {
+            window.__progress = p;
+            progress.textContent = 'コンパイル中... ' + p.toFixed(1) + '%';
+            barFill.style.width = p + '%';
+        });
+        const buffer = await compiler.exportData();
+        progress.textContent = '完了 (' + Math.round(buffer.byteLength / 1024) + ' KB)';
+        barFill.style.width = '100%';
+
+        const blob = new Blob([buffer]);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'targets.mind';
+        a.textContent = 'targets.mind をダウンロード';
+        a.className = 'dl';
+        result.innerHTML = '';
+        result.appendChild(a);
+
+        // ヘッドレス抽出用に base64 でも保持する
+        const bytes = new Uint8Array(buffer);
+        let bin = '';
+        const CHUNK = 0x8000;
+        for (let i = 0; i < bytes.length; i += CHUNK) {
+            bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+        }
+        window.__mind = btoa(bin);
+        window.__status = 'done';
+        btn.disabled = false;
+    }
+
+    btn.addEventListener('click', () => compile(images).catch(err => {
+        window.__status = 'error: ' + (err.message || err);
+        progress.textContent = 'エラー: ' + (err.message || err);
+        btn.disabled = false;
+    }));
+
+    // ?auto=assets/ar/card1.jpg,assets/ar/card2.jpg で自動コンパイル
+    const params = new URLSearchParams(location.search);
+    if (params.get('auto')) {
+        const urls = params.get('auto').split(',');
+        (async () => {
+            try {
+                window.__status = 'loading-images';
+                const imgs = [];
+                for (const u of urls) {
+                    const abs = new URL(u, location.origin + '/').href;
+                    imgs.push(await loadImageFromUrl(abs));
+                    addThumb(abs, u);
+                }
+                await compile(imgs);
+            } catch (err) {
+                window.__status = 'error: ' + (err.message || err);
+                progress.textContent = 'エラー: ' + (err.message || err);
+            }
+        })();
+    }
+})();
+</script>
+</body>
+</html>

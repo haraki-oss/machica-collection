@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ARスキャン | machica collection</title>
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+<style>
+    :root {
+        --primary: #1E1B19;
+        --text-secondary: #5A5854;
+        --bg-white: #FFFFFF;
+        --border: #E5E4E1;
+        --radius-lg: 20px;
+        --shadow-lg: 0 12px 40px rgba(30, 27, 25, 0.12), 0 4px 12px rgba(30, 27, 25, 0.06);
+        --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body {
+        font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+        background: #000;
+    }
+
+    /* ---- ヘッダー ---- */
+    .ar-header {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 18px;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.55), transparent);
+        color: #fff;
+        pointer-events: none;
+    }
+    .ar-header .title { font-size: 0.95rem; font-weight: 700; letter-spacing: 0.08em; }
+    .ar-header .title span { opacity: 0.65; font-weight: 400; margin-left: 8px; font-size: 0.8rem; }
+    .ar-back {
+        pointer-events: auto;
+        color: #fff; text-decoration: none; font-size: 0.85rem;
+        background: rgba(255,255,255,0.16);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255,255,255,0.25);
+        border-radius: 999px; padding: 8px 16px;
+        transition: background var(--transition);
+    }
+    .ar-back:active { background: rgba(255,255,255,0.3); }
+
+    /* ---- スキャンガイド ---- */
+    .scan-guide {
+        position: fixed; inset: 0; z-index: 10;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 18px; pointer-events: none;
+        transition: opacity 0.4s;
+    }
+    .scan-guide.hidden { opacity: 0; }
+    .scan-frame {
+        width: min(72vw, 320px); aspect-ratio: 8 / 5;
+        border-radius: 16px;
+        box-shadow: 0 0 0 200vmax rgba(0,0,0,0.25);
+        position: relative;
+    }
+    .scan-frame::before, .scan-frame::after,
+    .scan-frame i::before, .scan-frame i::after {
+        content: ''; position: absolute; width: 34px; height: 34px;
+        border: 3px solid #fff; border-radius: 4px;
+    }
+    .scan-frame::before { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+    .scan-frame::after  { top: -2px; right: -2px; border-left: none; border-bottom: none; }
+    .scan-frame i::before { bottom: -2px; left: -2px; border-right: none; border-top: none; }
+    .scan-frame i::after  { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+    .scan-text {
+        color: #fff; font-size: 0.88rem; letter-spacing: 0.05em;
+        background: rgba(0,0,0,0.45); backdrop-filter: blur(6px);
+        padding: 10px 22px; border-radius: 999px;
+        animation: pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+    /* ---- カード情報パネル ---- */
+    .info-panel {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+        background: var(--bg-white);
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        box-shadow: var(--shadow-lg);
+        padding: 22px 22px calc(22px + env(safe-area-inset-bottom));
+        transform: translateY(110%);
+        transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .info-panel.show { transform: translateY(0); }
+    .info-panel .grip {
+        width: 40px; height: 4px; border-radius: 2px;
+        background: var(--border); margin: -8px auto 14px;
+    }
+    .info-panel h2 { font-size: 1.1rem; color: var(--primary); margin-bottom: 8px; }
+    .info-panel p {
+        font-size: 0.83rem; color: var(--text-secondary); line-height: 1.7;
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+        margin-bottom: 16px;
+    }
+    .info-panel .actions { display: flex; gap: 10px; }
+    .btn-detail {
+        flex: 1; text-align: center; text-decoration: none;
+        background: var(--primary); color: #fff;
+        border-radius: 999px; padding: 13px 0; font-size: 0.9rem; font-weight: 600;
+    }
+    .btn-replay {
+        flex: 0 0 auto; background: none; border: 1px solid var(--border);
+        border-radius: 999px; padding: 13px 20px; font-size: 0.9rem;
+        color: var(--primary); cursor: pointer;
+    }
+
+    /* ---- 動画再生の許可（iOS対策） ---- */
+    .tap-to-play {
+        position: fixed; inset: 0; z-index: 30;
+        display: none; align-items: center; justify-content: center;
+        background: rgba(0,0,0,0.5);
+    }
+    .tap-to-play.show { display: flex; }
+    .tap-to-play button {
+        background: #fff; color: var(--primary); border: none;
+        border-radius: 999px; padding: 16px 36px; font-size: 1rem; font-weight: 700;
+        box-shadow: var(--shadow-lg); cursor: pointer;
+    }
+
+    /* ---- エラー表示 ---- */
+    .ar-error {
+        position: fixed; inset: 0; z-index: 40;
+        display: none; flex-direction: column; align-items: center; justify-content: center;
+        gap: 14px; padding: 30px; text-align: center;
+        background: var(--bg-white); color: var(--primary);
+    }
+    .ar-error.show { display: flex; }
+    .ar-error p { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.8; }
+
+    /* MindAR のデフォルトUIを無効化しているため念のため隠す */
+    .mindar-ui-overlay { display: none !important; }
+</style>
+</head>
+<body>
+    <header class="ar-header">
+        <div class="title">machica<span>AR スキャン</span></div>
+        <a class="ar-back" href="index.html">← もどる</a>
+    </header>
+
+    <div class="scan-guide" id="scanGuide">
+        <div class="scan-frame"><i></i></div>
+        <div class="scan-text">カードにかざしてください</div>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+        <div class="grip"></div>
+        <h2 id="infoTitle"></h2>
+        <p id="infoDesc"></p>
+        <div class="actions">
+            <a class="btn-detail" id="infoLink" href="#">カード詳細を見る</a>
+            <button class="btn-replay" id="replayBtn">↺ 動画</button>
+        </div>
+    </div>
+
+    <div class="tap-to-play" id="tapToPlay">
+        <button id="tapPlayBtn">▶ タップして動画を再生</button>
+    </div>
+
+    <div class="ar-error" id="arError">
+        <h2>カメラを起動できませんでした</h2>
+        <p id="arErrorMsg">
+            ブラウザのカメラ利用許可を確認してください。<br>
+            iPhone は Safari、Android は Chrome での利用を推奨します。
+        </p>
+        <a class="btn-detail" style="flex:none; padding: 13px 40px;" href="index.html">トップへもどる</a>
+    </div>
+
+    <script src="ar-app.js"></script>
+</body>
+</html>
