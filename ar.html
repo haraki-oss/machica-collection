@@ -54,7 +54,8 @@
     }
     .scan-guide.hidden { opacity: 0; }
     .scan-frame {
-        width: min(72vw, 320px); aspect-ratio: 8 / 5;
+        /* カードは縦型のため枠も縦長にする */
+        width: min(58vw, 250px); aspect-ratio: 5 / 8;
         border-radius: 16px;
         box-shadow: 0 0 0 200vmax rgba(0,0,0,0.25);
         position: relative;
@@ -109,6 +110,43 @@
         color: var(--primary); cursor: pointer;
     }
 
+    /* ---- 動画オーバーレイ（カード認識後、画面中央に大きく再生） ---- */
+    .video-overlay {
+        position: fixed; inset: 0; z-index: 15;
+        display: none; align-items: center; justify-content: center;
+        padding: 76px 14px 190px; /* ヘッダーと情報パネルを避ける */
+        background: rgba(0, 0, 0, 0.35);
+    }
+    .video-overlay.show { display: flex; }
+    .video-shell {
+        position: relative;
+        max-width: 100%; max-height: 100%;
+        animation: vo-pop 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    @keyframes vo-pop {
+        from { transform: scale(0.82); opacity: 0; }
+        to   { transform: scale(1); opacity: 1; }
+    }
+    .video-shell video {
+        display: block;
+        max-width: min(94vw, 640px);
+        max-height: calc(100vh - 280px);
+        border-radius: 16px;
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+        background: #000;
+    }
+    .vo-btn {
+        position: absolute; z-index: 2;
+        width: 40px; height: 40px; border-radius: 50%;
+        border: none; cursor: pointer;
+        background: rgba(0, 0, 0, 0.55); color: #fff;
+        backdrop-filter: blur(6px);
+        font-size: 1rem; line-height: 1;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .vo-close { top: -12px; right: -8px; }
+    .vo-mute { bottom: 10px; right: 10px; }
+
     /* ---- 動画再生の許可（iOS対策） ---- */
     .tap-to-play {
         position: fixed; inset: 0; z-index: 30;
@@ -162,6 +200,14 @@
     <div class="scan-guide" id="scanGuide">
         <div class="scan-frame"><i></i></div>
         <div class="scan-text">カードにかざしてください</div>
+    </div>
+
+    <div class="video-overlay" id="videoOverlay">
+        <div class="video-shell">
+            <video id="overlayVideo" playsinline muted loop preload="auto"></video>
+            <button class="vo-btn vo-close" id="voCloseBtn" aria-label="閉じる">✕</button>
+            <button class="vo-btn vo-mute" id="voMuteBtn" aria-label="音声">🔇</button>
+        </div>
     </div>
 
     <div class="info-panel" id="infoPanel">

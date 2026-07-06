@@ -41,6 +41,10 @@ const AR_DEMO_CONFIG = {
     const tapToPlay = document.getElementById('tapToPlay');
     const tapPlayBtn = document.getElementById('tapPlayBtn');
     const arError = document.getElementById('arError');
+    const videoOverlay = document.getElementById('videoOverlay');
+    const overlayVideo = document.getElementById('overlayVideo');
+    const voCloseBtn = document.getElementById('voCloseBtn');
+    const voMuteBtn = document.getElementById('voMuteBtn');
 
     let arCards = [];
     let activeIndex = -1;
@@ -82,10 +86,6 @@ const AR_DEMO_CONFIG = {
         }
     }
 
-    function videoEl(index) {
-        return document.getElementById('ar-video-' + index);
-    }
-
     function tryPlay(video) {
         video.play().catch(() => {
             // iOS Safari はユーザー操作なしの再生を拒否することがある
@@ -102,9 +102,27 @@ const AR_DEMO_CONFIG = {
         scanGuide.classList.add('hidden');
     }
 
-    function hideInfo() {
+    /**
+     * カード認識時: 動画をカードに張り付けず、画面中央に大きく再生する。
+     * 一度再生が始まればカードから手を離しても再生は続く（✕ で閉じるまで）。
+     */
+    function openOverlay(index) {
+        const card = arCards[index];
+        if (activeIndex !== index) {
+            overlayVideo.src = card.video;
+        }
+        activeIndex = index;
+        videoOverlay.classList.add('show');
+        showInfo(index);
+        tryPlay(overlayVideo);
+    }
+
+    function closeOverlay() {
+        overlayVideo.pause();
+        videoOverlay.classList.remove('show');
         infoPanel.classList.remove('show');
         scanGuide.classList.remove('hidden');
+        activeIndex = -1;
     }
 
     // ---- A-Frame シーンを構成から動的に構築 ----
@@ -120,49 +138,20 @@ const AR_DEMO_CONFIG = {
         scene.setAttribute('device-orientation-permission-ui', 'enabled: false');
         scene.setAttribute('embedded', '');
 
-        const assets = document.createElement('a-assets');
-        arCards.forEach((card, i) => {
-            const video = document.createElement('video');
-            video.id = 'ar-video-' + i;
-            video.src = card.video;
-            video.setAttribute('preload', 'auto');
-            video.setAttribute('loop', '');
-            video.setAttribute('muted', '');
-            video.muted = true; // 属性だけでは効かないブラウザ対策
-            video.setAttribute('playsinline', '');
-            video.setAttribute('crossorigin', 'anonymous');
-            assets.appendChild(video);
-        });
-        scene.appendChild(assets);
-
         const camera = document.createElement('a-camera');
         camera.setAttribute('position', '0 0 0');
         camera.setAttribute('look-controls', 'enabled: false');
         scene.appendChild(camera);
 
         arCards.forEach((card, i) => {
+            // ターゲットは「認識」のためだけに使う（動画は画面中央のオーバーレイで再生）
             const target = document.createElement('a-entity');
             target.setAttribute('mindar-image-target', 'targetIndex: ' + i);
 
-            // カードの真上に動画を重ねる (ターゲット幅 = 1 に正規化されている)
-            const plane = document.createElement('a-video');
-            plane.setAttribute('src', '#ar-video-' + i);
-            plane.setAttribute('width', '1');
-            plane.setAttribute('height', String(card.ratio));
-            plane.setAttribute('position', '0 0 0.01');
-            plane.setAttribute('rotation', '0 0 0');
-            target.appendChild(plane);
-
             target.addEventListener('targetFound', () => {
-                activeIndex = i;
-                showInfo(i);
-                tryPlay(videoEl(i));
+                openOverlay(i);
             });
-            target.addEventListener('targetLost', () => {
-                if (activeIndex === i) activeIndex = -1;
-                videoEl(i).pause();
-                hideInfo();
-            });
+            // targetLost では何もしない: カードから離れても動画は流れ続ける
 
             scene.appendChild(target);
         });
@@ -177,14 +166,21 @@ const AR_DEMO_CONFIG = {
     // ---- UI イベント ----
     tapPlayBtn.addEventListener('click', () => {
         tapToPlay.classList.remove('show');
-        if (activeIndex >= 0) videoEl(activeIndex).play().catch(() => {});
+        if (activeIndex >= 0) overlayVideo.play().catch(() => {});
     });
 
     replayBtn.addEventListener('click', () => {
         if (activeIndex < 0) return;
-        const video = videoEl(activeIndex);
-        video.currentTime = 0;
-        tryPlay(video);
+        overlayVideo.currentTime = 0;
+        tryPlay(overlayVideo);
+    });
+
+    voCloseBtn.addEventListener('click', closeOverlay);
+
+    voMuteBtn.addEventListener('click', () => {
+        overlayVideo.muted = !overlayVideo.muted;
+        voMuteBtn.textContent = overlayVideo.muted ? '🔇' : '🔊';
+        if (!overlayVideo.muted && overlayVideo.paused) tryPlay(overlayVideo);
     });
 
     // ---- 左→右スワイプでカード一覧に戻る (index.html からのスワイプ遷移と対) ----
