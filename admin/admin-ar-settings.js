@@ -34,6 +34,39 @@ function esc(s) {
     }[c]));
 }
 
+/**
+ * HEVC (H.265) 動画の検出。
+ * iPhone の「高効率」設定で撮影した動画は多くのブラウザで再生できないため、
+ * ファイル内の moov/コーデックマーカー (hvc1/hev1/hvcC) を探して弾く。
+ */
+function findAscii(bytes, marker) {
+    const m = Array.from(marker, c => c.charCodeAt(0));
+    outer: for (let i = 0; i <= bytes.length - m.length; i++) {
+        for (let j = 0; j < m.length; j++) {
+            if (bytes[i + j] !== m[j]) continue outer;
+        }
+        return true;
+    }
+    return false;
+}
+
+async function isHevc(file) {
+    const name = (file.name || '').toLowerCase();
+    const isMp4Like = /\.(mp4|m4v|mov)$/.test(name) || /mp4|quicktime/.test(file.type || '');
+    if (!isMp4Like) return false;
+    const CHUNK = 2 * 1024 * 1024;
+    const parts = file.size <= CHUNK * 2
+        ? [file]
+        : [file.slice(0, CHUNK), file.slice(file.size - CHUNK)];
+    for (const part of parts) {
+        const bytes = new Uint8Array(await part.arrayBuffer());
+        if (findAscii(bytes, 'hvc1') || findAscii(bytes, 'hev1') || findAscii(bytes, 'hvcC')) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function updateSummary() {
     const enabled = cards.filter(c => state.get(String(c.id))?.enabled);
     const missing = enabled.filter(c => {
@@ -94,10 +127,19 @@ function renderRows() {
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
         fileInput.accept = 'video/mp4,video/quicktime,video/webm';
-        fileInput.addEventListener('change', () => {
+        fileInput.addEventListener('change', async () => {
             const file = fileInput.files[0] || null;
             if (file && file.size > MAX_VIDEO_MB * 1024 * 1024) {
                 alert(`動画は ${MAX_VIDEO_MB}MB 以下にしてください（選択: ${Math.round(file.size / 1024 / 1024)}MB）`);
+                fileInput.value = '';
+                s.file = null;
+            } else if (file && await isHevc(file)) {
+                alert(
+                    'この動画は HEVC (H.265) 形式のため、Android など多くのスマホで再生できません。\n\n' +
+                    '【対処方法】\n' +
+                    '・iPhoneで撮影する場合: 設定 → カメラ → フォーマット → 「互換性優先」にして撮り直す\n' +
+                    '・既存の動画: iPhoneの写真アプリから「共有 → 互換性優先で書き出し」、またはPCで MP4 (H.264) に変換してください'
+                );
                 fileInput.value = '';
                 s.file = null;
             } else {
