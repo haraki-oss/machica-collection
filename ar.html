@@ -146,6 +146,26 @@
     }
     .vo-close { top: -12px; right: -8px; }
     .vo-mute { bottom: 10px; right: 10px; }
+    .vo-fs { bottom: 10px; left: 10px; }
+
+    /* 全画面表示時: 動画を画面いっぱいに */
+    .video-shell:fullscreen {
+        display: flex; align-items: center; justify-content: center;
+        background: #000; width: 100vw; height: 100vh;
+    }
+    .video-shell:fullscreen video {
+        max-width: 100vw; max-height: 100vh;
+        width: 100vw; height: 100vh;
+        object-fit: contain;
+        border-radius: 0; box-shadow: none;
+    }
+    .video-shell:fullscreen .vo-close { top: 14px; right: 14px; }
+    /* Safari (旧仕様) */
+    .video-shell:-webkit-full-screen video {
+        max-width: 100vw; max-height: 100vh;
+        width: 100vw; height: 100vh;
+        object-fit: contain; border-radius: 0;
+    }
 
     /* ---- 動画再生の許可（iOS対策） ---- */
     .tap-to-play {
@@ -207,6 +227,7 @@
             <video id="overlayVideo" playsinline muted loop preload="auto"></video>
             <button class="vo-btn vo-close" id="voCloseBtn" aria-label="閉じる">✕</button>
             <button class="vo-btn vo-mute" id="voMuteBtn" aria-label="音声">🔇</button>
+            <button class="vo-btn vo-fs" id="voFsBtn" aria-label="全画面">⛶</button>
         </div>
     </div>
 

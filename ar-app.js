@@ -175,7 +175,34 @@ const AR_DEMO_CONFIG = {
         tryPlay(overlayVideo);
     });
 
-    voCloseBtn.addEventListener('click', closeOverlay);
+    voCloseBtn.addEventListener('click', () => {
+        // 全画面中に閉じたら全画面も解除する
+        if (document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+        }
+        closeOverlay();
+    });
+
+    // ---- 全画面表示 ----
+    const videoShell = document.querySelector('.video-shell');
+    const voFsBtn = document.getElementById('voFsBtn');
+
+    voFsBtn.addEventListener('click', () => {
+        if (document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+            return;
+        }
+        if (videoShell.requestFullscreen) {
+            videoShell.requestFullscreen().catch(() => {});
+        } else if (overlayVideo.webkitEnterFullscreen) {
+            // iOS Safari: 要素の全画面が使えないため、動画をネイティブプレーヤーで全画面表示
+            overlayVideo.webkitEnterFullscreen();
+        }
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+        voFsBtn.textContent = document.fullscreenElement ? '🡼' : '⛶';
+    });
 
     voMuteBtn.addEventListener('click', () => {
         overlayVideo.muted = !overlayVideo.muted;
