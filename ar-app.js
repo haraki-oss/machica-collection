@@ -187,6 +187,29 @@ const AR_DEMO_CONFIG = {
         tryPlay(video);
     });
 
+    // ---- 左→右スワイプでカード一覧に戻る (index.html からのスワイプ遷移と対) ----
+    if ('ontouchstart' in window) {
+        const EDGE = 24, MIN_X = 80, MAX_Y = 70, MAX_MS = 600;
+        let sx = 0, sy = 0, st = 0, tracking = false;
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length !== 1) { tracking = false; return; }
+            const t = e.touches[0];
+            if (t.clientX < EDGE || t.clientX > window.innerWidth - EDGE) { tracking = false; return; }
+            sx = t.clientX; sy = t.clientY; st = Date.now(); tracking = true;
+        }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            if (!tracking) return;
+            tracking = false;
+            const t = e.changedTouches[0];
+            const dx = t.clientX - sx;
+            const dy = t.clientY - sy;
+            if (Date.now() - st <= MAX_MS && dx >= MIN_X && Math.abs(dy) <= MAX_Y && Math.abs(dx) > Math.abs(dy) * 2) {
+                document.body.classList.add('page-swipe-back');
+                setTimeout(() => { window.location.href = 'index.html'; }, 240);
+            }
+        }, { passive: true });
+    }
+
     // カメラ非対応環境の早期検出
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         arError.classList.add('show');

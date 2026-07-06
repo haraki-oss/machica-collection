@@ -134,6 +134,21 @@
 
     /* MindAR のデフォルトUIを無効化しているため念のため隠す */
     .mindar-ui-overlay { display: none !important; }
+
+    /* 左→右スワイプで一覧に戻るときの退場アニメーション */
+    body.page-swipe-back {
+        transition: transform 0.28s ease, opacity 0.28s ease;
+        transform: translateX(8%);
+        opacity: 0.25;
+    }
+
+    /* 戻り導線のヒント (ヘッダー下) */
+    .back-swipe-hint {
+        position: fixed; top: 64px; left: 18px; z-index: 15;
+        color: rgba(255,255,255,0.75); font-size: 0.72rem; letter-spacing: 0.05em;
+        pointer-events: none;
+    }
+    @media (hover: hover) { .back-swipe-hint { display: none; } }
 </style>
 </head>
 <body>
@@ -141,6 +156,8 @@
         <div class="title">machica<span>AR スキャン</span></div>
         <a class="ar-back" href="index.html">← もどる</a>
     </header>
+
+    <div class="back-swipe-hint">スワイプで一覧へ ▶</div>
 
     <div class="scan-guide" id="scanGuide">
         <div class="scan-frame"><i></i></div>

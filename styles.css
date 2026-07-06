@@ -2421,3 +2421,50 @@ a.bi-row:hover {
     .card-tags { gap: 3px; margin-top: 4px; }
     .card-tag-pill { font-size: 0.6rem; padding: 1px 6px; max-width: 70px; }
 }
+
+
+/* =====================================================
+   ARスキャンへのスワイプナビゲーション (swipe-nav.js)
+   ===================================================== */
+body.page-swipe-out {
+    transition: transform 0.28s ease, opacity 0.28s ease;
+    transform: translateX(-8%);
+    opacity: 0.25;
+}
+
+.ar-swipe-hint {
+    position: fixed;
+    right: 16px;
+    bottom: 24px;
+    z-index: 900;
+    display: none;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 18px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(30, 27, 25, 0.82);
+    color: #fff;
+    font-size: 0.78rem;
+    font-family: inherit;
+    letter-spacing: 0.04em;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+}
+
+/* タッチ端末でのみ表示 */
+@media (hover: none) and (pointer: coarse) {
+    .ar-swipe-hint { display: inline-flex; }
+}
+
+.ar-swipe-hint-arrow {
+    display: inline-block;
+    animation: ar-hint-slide 1.8s ease-in-out infinite;
+}
+
+@keyframes ar-hint-slide {
+    0%, 100% { transform: translateX(0); opacity: 1; }
+    50% { transform: translateX(-5px); opacity: 0.55; }
+}
